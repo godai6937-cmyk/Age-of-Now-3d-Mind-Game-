@@ -1,0 +1,75 @@
+{
+  "generator": "local-pillow-procedural-fallback",
+  "generated_at_epoch": 1781210585,
+  "textures": [
+    {
+      "name": "sandstone_blocks",
+      "path": "C:\\Users\\User\\Desktop\\new billing software Final 08-03-26\\GAME\\assets\\generated\\rts_style\\textures\\sandstone_blocks.png",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "sunbleached_plaster",
+      "path": "C:\\Users\\User\\Desktop\\new billing software Final 08-03-26\\GAME\\assets\\generated\\rts_style\\textures\\sunbleached_plaster.png",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "blue_ceramic_tiles",
+      "path": "C:\\Users\\User\\Desktop\\new billing software Final 08-03-26\\GAME\\assets\\generated\\rts_style\\textures\\blue_ceramic_tiles.png",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "red_awnings",
+      "path": "C:\\Users\\User\\Desktop\\new billing software Final 08-03-26\\GAME\\assets\\generated\\rts_style\\textures\\red_awnings.png",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "aged_wood_beams",
+      "path": "C:\\Users\\User\\Desktop\\new billing software Final 08-03-26\\GAME\\assets\\generated\\rts_style\\textures\\aged_wood_beams.png",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "dark_castle_stone",
+      "path": "C:\\Users\\User\\Desktop\\new billing software Final 08-03-26\\GAME\\assets\\generated\\rts_style\\textures\\dark_castle_stone.png",
+      "size": [
+        1024,
+        1024
+      ]
+    }
+  ],
+  "buildings": [
+    {
+      "name": "desert_civ_building_sheet",
+      "path": "C:\\Users\\User\\Desktop\\new billing software Final 08-03-26\\GAME\\assets\\generated\\rts_style\\buildings\\desert_civ_building_sheet.png",
+      "size": [
+        1600,
+        1000
+      ]
+    }
+  ],
+  "characters": [
+    {
+      "name": "desert_civ_unit_sheet",
+      "path": "C:\\Users\\User\\Desktop\\new billing software Final 08-03-26\\GAME\\assets\\generated\\rts_style\\characters\\desert_civ_unit_sheet.png",
+      "size": [
+        1560,
+        820
+      ]
+    }
+  ],
+  "style_brief": "C:\\Users\\User\\Desktop\\new billing software Final 08-03-26\\GAME\\assets\\generated\\rts_style\\style_brief.md"
+}

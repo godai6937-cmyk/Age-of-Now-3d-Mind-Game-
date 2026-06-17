@@ -1,0 +1,163 @@
+{
+  "generator": "local_required_game_assets",
+  "generated_at_epoch": 1781255608,
+  "runtime_textures": [
+    {
+      "name": "grass.png",
+      "path": "C:\\Users\\User\\Desktop\\new billing software Final 08-03-26\\GAME\\assets\\textures\\grass.png",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "grass_blade.png",
+      "path": "C:\\Users\\User\\Desktop\\new billing software Final 08-03-26\\GAME\\assets\\textures\\grass_blade.png",
+      "size": [
+        512,
+        512
+      ]
+    },
+    {
+      "name": "water.png",
+      "path": "C:\\Users\\User\\Desktop\\new billing software Final 08-03-26\\GAME\\assets\\textures\\water.png",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "wood_plank.png",
+      "path": "C:\\Users\\User\\Desktop\\new billing software Final 08-03-26\\GAME\\assets\\textures\\wood_plank.png",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "stone_wall.png",
+      "path": "C:\\Users\\User\\Desktop\\new billing software Final 08-03-26\\GAME\\assets\\textures\\stone_wall.png",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "roof_tile.png",
+      "path": "C:\\Users\\User\\Desktop\\new billing software Final 08-03-26\\GAME\\assets\\textures\\roof_tile.png",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "cloth_weave.png",
+      "path": "C:\\Users\\User\\Desktop\\new billing software Final 08-03-26\\GAME\\assets\\textures\\cloth_weave.png",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "leather.png",
+      "path": "C:\\Users\\User\\Desktop\\new billing software Final 08-03-26\\GAME\\assets\\textures\\leather.png",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "pants_weave.png",
+      "path": "C:\\Users\\User\\Desktop\\new billing software Final 08-03-26\\GAME\\assets\\textures\\pants_weave.png",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "chainmail.png",
+      "path": "C:\\Users\\User\\Desktop\\new billing software Final 08-03-26\\GAME\\assets\\textures\\chainmail.png",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "dark_stone.png",
+      "path": "C:\\Users\\User\\Desktop\\new billing software Final 08-03-26\\GAME\\assets\\textures\\dark_stone.png",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "dirt_ground.png",
+      "path": "C:\\Users\\User\\Desktop\\new billing software Final 08-03-26\\GAME\\assets\\textures\\dirt_ground.png",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "leaves_canopy.png",
+      "path": "C:\\Users\\User\\Desktop\\new billing software Final 08-03-26\\GAME\\assets\\textures\\leaves_canopy.png",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "bark.png",
+      "path": "C:\\Users\\User\\Desktop\\new billing software Final 08-03-26\\GAME\\assets\\textures\\bark.png",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "wheat_straw.png",
+      "path": "C:\\Users\\User\\Desktop\\new billing software Final 08-03-26\\GAME\\assets\\textures\\wheat_straw.png",
+      "size": [
+        1024,
+        1024
+      ]
+    }
+  ],
+  "sheets": [
+    {
+      "name": "villagers_realistic_sheet.png",
+      "path": "C:\\Users\\User\\Desktop\\new billing software Final 08-03-26\\GAME\\assets\\generated\\game_required\\sheets\\villagers_realistic_sheet.png",
+      "size": [
+        840,
+        850
+      ]
+    },
+    {
+      "name": "warriors_realistic_sheet.png",
+      "path": "C:\\Users\\User\\Desktop\\new billing software Final 08-03-26\\GAME\\assets\\generated\\game_required\\sheets\\warriors_realistic_sheet.png",
+      "size": [
+        840,
+        850
+      ]
+    }
+  ],
+  "required_runtime_texture_names": [
+    "grass.png",
+    "wood_plank.png",
+    "stone_wall.png",
+    "roof_tile.png"
+  ],
+  "recommended_extra_textures": [
+    "grass_blade.png",
+    "water.png",
+    "cloth_weave.png",
+    "leather.png",
+    "pants_weave.png",
+    "chainmail.png",
+    "dark_stone.png",
+    "dirt_ground.png",
+    "leaves_canopy.png",
+    "bark.png",
+    "wheat_straw.png"
+  ]
+}

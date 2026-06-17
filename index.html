@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Age of Now - RTS Strategy Game</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- PeerJS for Multiplayer -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+</head>
+<body>
+    <!-- Error Log Overlay -->
+    <div id="error-console" style="position: absolute; top: 15px; left: 15px; background: rgba(239, 68, 68, 0.95); color: #fff; padding: 20px; border-radius: 10px; z-index: 99999; font-family: monospace; display: none; max-width: 85%; box-shadow: 0 10px 25px rgba(0,0,0,0.5); border: 1.5px solid #ef4444;">
+        <h3 style="margin-top:0; font-size: 16px; margin-bottom: 8px;">⚠️ Game Load Error Detected</h3>
+        <p style="margin: 0 0 10px 0; font-size: 13px; color: #fee2e2;">The following error was thrown by the game code:</p>
+        <pre id="error-msg" style="white-space: pre-wrap; font-size: 12px; margin: 0; background: rgba(0,0,0,0.25); padding: 10px; border-radius: 6px;"></pre>
+    </div>
+    <script>
+        window.addEventListener('error', function(e) {
+            const consoleEl = document.getElementById('error-console');
+            const msgEl = document.getElementById('error-msg');
+            if (consoleEl && msgEl) {
+                consoleEl.style.display = 'block';
+                msgEl.textContent += e.message + '\n  at ' + e.filename + ':' + e.lineno + '\n\n';
+            }
+        });
+        window.addEventListener('unhandledrejection', function(e) {
+            const consoleEl = document.getElementById('error-console');
+            const msgEl = document.getElementById('error-msg');
+            if (consoleEl && msgEl) {
+                consoleEl.style.display = 'block';
+                msgEl.textContent += 'Unhandled Rejection: ' + e.reason + '\n\n';
+            }
+        });
+    </script>
+
+    <!-- 3D Render Canvas Container -->
+    <div id="game-container"></div>
+
+    <!-- Click & Drag Selection Box -->
+    <div id="selection-box" class="hidden"></div>
+
+    <!-- Screen Damage Overlay Flash -->
+    <div id="damage-overlay"></div>
+
+    <!-- UI Overlay (HUD) -->
+    <div id="hud" class="hidden">
+        <!-- Top Bar: Resources & Game Info -->
+        <div id="top-bar" class="hud-panel">
+            <div id="player-hud-info" style="display: flex; align-items: center; gap: 8px; margin-right: 15px; border-right: 1px solid rgba(255,255,255,0.2); padding-right: 15px;">
+                <div id="hud-color-flag" style="width: 18px; height: 18px; border-radius: 4px; background-color: #2563eb; border: 2px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5);"></div>
+                <span id="hud-player-name" style="font-weight: bold; font-size: 1.1rem; color: #fff; text-shadow: 1px 1px 2px black;">Player</span>
+            </div>
+            <div class="resource-container">
+                <div class="resource" id="res-food">
+                    <span class="icon">🌾</span>
+                    <span class="value" id="food-val">200</span>
+                </div>
+                <div class="resource" id="res-wood">
+                    <span class="icon">🪓</span>
+                    <span class="value" id="wood-val">200</span>
+                </div>
+                <div class="resource" id="res-gold">
+                    <span class="icon">🪙</span>
+                    <span class="value" id="gold-val">100</span>
+                </div>
+                <div class="resource" id="res-stone">
+                    <span class="icon">🪨</span>
+                    <span class="value" id="stone-val">0</span>
+                </div>
+                <div class="resource" id="res-pop">
+                    <span class="icon">👥</span>
+                    <span class="value" id="pop-val">4/10</span>
+                </div>
+            </div>
+            
+            <div class="game-phase-indicator">
+                <span id="game-timer">00:00</span>
+                <span class="divider">|</span>
+                <span id="age-indicator" class="age-badge age-1">🌅 Dawn Age</span>
+            </div>
+
+            <div class="top-bar-controls">
+                <div id="invite-code-container" class="hidden" style="display:flex; align-items:center; gap:8px; background:rgba(0,0,0,0.5); padding:4px 10px; border-radius:6px; border:1px solid #d4af37;">
+                    <span style="font-size:0.8rem; color:#9ca3af;">Invite Code:</span>
+                    <span id="invite-code-display" style="font-family:monospace; color:#d4af37; font-weight:bold; letter-spacing:1px;">...</span>
+                    <button id="btn-copy-invite" style="background:none; border:none; color:#fff; cursor:pointer;" title="Copy Code">📋</button>
+                </div>
+                <button id="btn-toggle-mic" class="hidden" title="Toggle Microphone" style="font-size:1.2rem; background:rgba(239, 68, 68, 0.8); border:1px solid #ef4444; border-radius:4px; padding:0 8px; cursor:pointer;">🔇</button>
+                <button id="btn-recalibrate" title="Recalibrate Tilt (Enable Sensors)" style="font-size:1.2rem; background:rgba(0,0,0,0.5); border:1px solid #d4af37; border-radius:4px; padding:0 8px; cursor:pointer;">📱</button>
+                <button id="btn-pause" title="Pause Game">⏸️</button>
+                <button id="btn-restart" title="Restart Game">🔄</button>
+            </div>
+        </div>
+
+        <!-- Age Advancement Banner -->
+        <div id="age-banner" class="age-banner hidden">
+            <div class="age-banner-content">
+                <div class="age-banner-icon" id="age-banner-icon">⚔️</div>
+                <h2 class="age-banner-title" id="age-banner-title">Feudal Age</h2>
+                <p class="age-banner-subtitle">New buildings and units unlocked!</p>
+            </div>
+        </div>
+
+        <!-- Bottom Panel: Info, Command Card, Minimap -->
+        <div id="bottom-bar">
+            <!-- Left: Selection Info -->
+            <div id="info-panel" class="hud-panel">
+                <div id="info-empty" class="info-content">
+                    <p class="placeholder-text">Select a unit or building to view details.</p>
+                </div>
+                <div id="info-details" class="info-content hidden">
+                    <div class="info-header">
+                        <div class="info-portrait" id="info-portrait">🧑‍🌾</div>
+                        <div class="info-titles">
+                            <h3 id="info-name">Villager</h3>
+                            <span id="info-faction" class="badge">Player</span>
+                        </div>
+                    </div>
+                    <div class="info-stats">
+                        <div class="stat-row">
+                            <span>Health:</span>
+                            <div class="health-bar-container">
+                                <div id="info-health-fill" class="health-bar-fill" style="width: 100%;"></div>
+                                <span id="info-health-text">50/50</span>
+                            </div>
+                        </div>
+                        <div id="info-extra-stats" class="extra-stats-grid">
+                            <!-- Populated dynamically: Damage, Range, Gather rate, Queue status etc. -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Middle: Command Card (Actions / Construction / Training) -->
+            <div id="command-panel" class="hud-panel">
+                <h4 class="panel-title">Commands</h4>
+                <div id="command-grid" class="command-grid">
+                    <!-- Buttons inserted dynamically based on selection -->
+                </div>
+            </div>
+
+            <!-- Right: Minimap & Speed Control -->
+            <div id="minimap-panel" class="hud-panel">
+                <canvas id="minimap-canvas" width="150" height="150"></canvas>
+                <div class="minimap-label">MINIMAP</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- UI Screen: Main Screen / How to Play / Start -->
+    <div id="start-screen" class="overlay-screen">
+        <div class="screen-content">
+            <h1 class="game-title">AGE OF NOW</h1>
+            <p class="subtitle">A 3D Real-Time Strategy Adventure in Your Browser</p>
+            
+            <details class="how-to-play-details" style="margin-bottom: 20px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+                <summary style="padding: 10px; font-weight: bold; cursor: pointer; color: #d4af37; text-align: center; list-style: none; font-size: 1.1rem;">🎮 How to Play (Tap to expand)</summary>
+                <div style="padding: 15px; border-top: 1px solid rgba(255,255,255,0.1); text-align: left; font-size: 0.9rem; line-height: 1.5;">
+                    <ul style="margin: 0; padding-left: 20px;">
+                        <li><strong>Camera Control:</strong> Use <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrow keys to pan, scroll wheel to zoom, and right-click & drag to rotate.</li>
+                        <li><strong>Selection:</strong> Left-click to select a unit/building, or click and drag a box to select multiple units.</li>
+                        <li><strong>Orders:</strong> Right-click on the ground to move selected units.</li>
+                        <li><strong>Resources:</strong> Right-click on trees (Wood 🪓), gold veins (Gold 🪙), stone deposits (Stone 🪨), or forage bushes (Food 🌾) to gather.</li>
+                        <li><strong>Build:</strong> Select a Villager, click a building in the Commands card, then click on the ground to place it.</li>
+                        <li><strong>Train:</strong> Select a Town Center to train Villagers, or Barracks to train Soldiers/Archers.</li>
+                        <li><strong>Combat:</strong> Right-click on enemy units or buildings to attack.</li>
+                        <li><strong>Victory Condition:</strong> Locate the enemy red base and destroy their Town Center! Protect your own Town Center at all costs.</li>
+                    </ul>
+                </div>
+            </details>
+            
+            <div style="margin-bottom: 20px;">
+                <input type="text" id="player-name-input" placeholder="Type Player Name Here" style="width: 100%; box-sizing: border-box; padding: 12px; border-radius: 6px; border: 1px solid rgba(212, 175, 55, 0.5); background: rgba(0,0,0,0.6); color: #fff; font-size: 1.1rem; text-align: center; font-weight: bold;">
+            </div>
+
+            <!-- New Mode Selection -->
+            <div id="mode-selection" style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px;">
+                <button id="btn-mode-host" class="btn-primary" style="padding: 15px; font-size: 1.2rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%);">👑 START NEW GAME</button>
+                <div style="display: flex; flex-direction: column; gap: 10px; background: rgba(0,0,0,0.4); padding: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+                    <p style="margin: 0; color: #d4af37; font-weight: bold;">Or Join Existing Room:</p>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="input-join-code-menu" placeholder="Paste Invite Link or Room Code" style="flex: 1; padding: 12px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.6); color: #fff; font-family: monospace;">
+                        <button id="btn-mode-join" class="btn-primary" style="padding: 12px 25px; font-size: 1.1rem; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">JOIN</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="lobby-container" class="hidden">
+                <div id="lobby-host-controls" style="background: rgba(0,0,0,0.4); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid rgba(212, 175, 55, 0.3);">
+                <p style="margin: 0 0 10px 0; color: #d4af37; font-weight: bold;">Invite Link</p>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <input type="text" id="lobby-invite-link" readonly style="width: 100%; box-sizing: border-box; padding: 10px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.5); color: #fff; font-family: monospace; font-size: 0.9rem;">
+                    <div style="display: flex; gap: 10px;">
+                        <button id="btn-copy-link" class="btn-primary" style="padding: 10px 15px; font-size: 1rem; white-space: nowrap; flex: 1;" title="Copy Link">📋 Copy</button>
+                        <button id="btn-share-link" class="btn-primary" style="padding: 10px 15px; font-size: 1rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%); white-space: nowrap; flex: 1;" title="Share via Social Media">🔗 Share</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lobby-slots" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+                <!-- Slot 1 -->
+                <div class="lobby-slot" style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.5); padding: 12px 20px; border-radius: 6px; border-left: 4px solid #3b82f6;">
+                    <span style="font-weight: bold; font-size: 1.1rem;">Player 1 (Blue)</span>
+                    <span id="slot-1-status" style="color: #10b981; font-weight: bold;">Host 🟢</span>
+                </div>
+                <!-- Slot 2 -->
+                <div class="lobby-slot" style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.5); padding: 12px 20px; border-radius: 6px; border-left: 4px solid #ef4444;">
+                    <span style="font-weight: bold; font-size: 1.1rem;">Player 2 (Red)</span>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span id="slot-2-status" style="color: #9ca3af;">Waiting...</span>
+                        <button class="toggle-pc-btn host-only" data-slot="2" style="background: #4b5563; border: none; color: white; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; white-space: nowrap;">Add PC</button>
+                    </div>
+                </div>
+                <!-- Slot 3 -->
+                <div class="lobby-slot" style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.5); padding: 12px 20px; border-radius: 6px; border-left: 4px solid #10b981;">
+                    <span style="font-weight: bold; font-size: 1.1rem;">Player 3 (Green)</span>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span id="slot-3-status" style="color: #9ca3af;">Waiting...</span>
+                        <button class="toggle-pc-btn host-only" data-slot="3" style="background: #4b5563; border: none; color: white; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; white-space: nowrap;">Add PC</button>
+                    </div>
+                </div>
+                <!-- Slot 4 -->
+                <div class="lobby-slot" style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.5); padding: 12px 20px; border-radius: 6px; border-left: 4px solid #f59e0b;">
+                    <span style="font-weight: bold; font-size: 1.1rem;">Player 4 (Yellow)</span>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span id="slot-4-status" style="color: #9ca3af;">Waiting...</span>
+                        <button class="toggle-pc-btn host-only" data-slot="4" style="background: #4b5563; border: none; color: white; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; white-space: nowrap;">Add PC</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="difficulty-control" class="host-only" style="margin-bottom: 15px; display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <label for="difficulty-select" style="font-weight: bold; color: white; margin-left: 10px;">Difficulty:</label>
+                <select id="difficulty-select" style="padding: 8px; border-radius: 4px; background: rgba(0,0,0,0.5); color: white; border: 1px solid rgba(255,255,255,0.2); font-size: 1rem; cursor: pointer;">
+                    <option value="easy">Easy</option>
+                    <option value="normal" selected>Normal</option>
+                    <option value="hard">Hard</option>
+                </select>
+            </div>
+
+            <button id="btn-all-ages-demo" class="btn-primary" style="width: 100%; margin-bottom: 10px; font-size: 1.1rem; padding: 12px; background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);">🎬 SHOW ALL AGES DEMO</button>
+            <div style="display: flex; gap: 10px; justify-content: center; align-items: center;">
+                <button id="btn-lobby-start" class="btn-primary host-only" style="flex: 1; font-size: 1.2rem; padding: 15px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">START GAME</button>
+            </div>
+            
+            <p id="lobby-waiting-msg" class="client-only hidden" style="text-align: center; color: #f3e5ab; font-weight: bold; margin-top: 15px;">Waiting for Host to start the game...</p>
+            </div> <!-- End lobby-container -->
+
+            <div id="connection-status" class="hidden" style="margin-top: 15px; color: #f3e5ab; font-weight: bold;">Connecting to network...</div>
+        </div>
+    </div>
+
+    <!-- UI Screen: Game Over (Victory / Defeat) -->
+    <div id="game-over-screen" class="overlay-screen hidden">
+        <div class="screen-content">
+            <h1 id="game-over-title" class="victory-text">VICTORY!</h1>
+            <p id="game-over-msg" class="subtitle">You have conquered the enemy and established your empire.</p>
+            <div class="stats-summary">
+                <h3>📜 Match Summary</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <span class="label">Time elapsed</span>
+                        <span class="value" id="stat-time">05:40</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="label">Units Trained</span>
+                        <span class="value" id="stat-units">34</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="label">Buildings Built</span>
+                        <span class="value" id="stat-buildings">8</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="label">Enemies Slain</span>
+                        <span class="value" id="stat-kills">18</span>
+                    </div>
+                </div>
+            </div>
+            <button id="btn-play-again" class="btn-primary">PLAY AGAIN</button>
+        </div>
+    </div>
+
+    <!-- Audio Settings Icon -->
+    <div id="audio-settings-toggle" title="Toggle Sound">🔊</div>
+
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <!-- Credits -->
+    <div style="position: absolute; bottom: 10px; left: 10px; color: rgba(255,255,255,0.8); font-family: 'Outfit', sans-serif; font-size: 14px; z-index: 9999; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); pointer-events: none;">
+        Dr Ashish Bajpai , Creativebuzz Media Production
+    </div>
+
+    <!-- Container for incoming voice chat audio elements -->
+    <div id="voice-streams" class="hidden"></div>
+
+    <!-- Import Main Game Scripts -->
+    <script type="module" src="js/game.js?v=31"></script>
+</body>
+</html>
