@@ -86,7 +86,7 @@ export class WorldMap {
         // Store elevation data for querying
         this._elevationData = null;
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 800;
-        this._elevationSegments = isMobile ? 120 : 200;
+        this._elevationSegments = isMobile ? 80 : 200;
 
         // Map layout parameters
         this.layout = {

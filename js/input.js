@@ -959,6 +959,8 @@ export class InputController {
         const forward = new THREE.Vector3(Math.sin(camYaw), 0, Math.cos(camYaw)).normalize();
         const right = new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0), forward).normalize();
 
+        let isAnalog = false;
+
         // Edge scrolling (camera-relative)
         const edgeSize = 20;
         if (this.mousePos.x < edgeSize) direction.add(right.clone().multiplyScalar(-1));
@@ -999,15 +1001,26 @@ export class InputController {
             }
 
             if (Math.abs(tiltForward) > deadzone) {
-                direction.add(forward.clone().multiplyScalar(Math.sign(tiltForward) * (Math.abs(tiltForward)-deadzone) * 0.15));
+                const amount = Math.sign(tiltForward) * (Math.abs(tiltForward)-deadzone) * 0.08;
+                direction.add(forward.clone().multiplyScalar(amount));
+                isAnalog = true;
             }
             if (Math.abs(tiltRight) > deadzone) {
-                direction.add(right.clone().multiplyScalar(Math.sign(tiltRight) * (Math.abs(tiltRight)-deadzone) * 0.15));
+                const amount = Math.sign(tiltRight) * (Math.abs(tiltRight)-deadzone) * 0.08;
+                direction.add(right.clone().multiplyScalar(amount));
+                isAnalog = true;
             }
         }
 
         if (direction.lengthSq() > 0) {
-            direction.normalize().multiplyScalar(panSpeed * dt);
+            if (!isAnalog) {
+                direction.normalize();
+            } else {
+                if (direction.length() > 2.5) {
+                    direction.normalize().multiplyScalar(2.5);
+                }
+            }
+            direction.multiplyScalar(panSpeed * dt);
             this.game.cameraTarget.add(direction);
             
             // Constrain camera target to map size boundaries
