@@ -37,6 +37,10 @@ export class NetworkController {
             }
         };
         this.peer = new Peer(peerConfig);
+        this.peer.on('disconnected', () => {
+            console.log('Host disconnected from PeerServer. Reconnecting...');
+            this.peer.reconnect();
+        });
         this.peer.on('open', (id) => {
             this.peerId = id;
             this.lobbyState[1].peerId = id;
@@ -160,6 +164,10 @@ export class NetworkController {
         };
         this.peer = new Peer(peerConfig);
         
+        this.peer.on('disconnected', () => {
+            console.log('Client disconnected from PeerServer. Reconnecting...');
+            this.peer.reconnect();
+        });
         this.peer.on('open', (id) => {
             this.peerId = id;
             this.setupVoiceListeners();

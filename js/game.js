@@ -153,6 +153,7 @@ class GameController {
 
             // Renderer
             this.renderer = new THREE.WebGLRenderer({ antialias: true });
+            this.renderer.setPixelRatio(window.devicePixelRatio);
             this.renderer.setSize(window.innerWidth, window.innerHeight);
             this.renderer.shadowMap.enabled = true;
             this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -247,7 +248,7 @@ class GameController {
             document.getElementById('connection-status').textContent = "Connecting to Host...";
             document.getElementById('connection-status').classList.remove('hidden');
             
-            this.network.initClient(joinId, () => {
+            const onInit = () => {
                 // Connected successfully
                 document.getElementById('connection-status').classList.add('hidden');
                 
@@ -261,17 +262,26 @@ class GameController {
                 const joinInputEl = document.getElementById('input-join-code-menu');
                 const joinInputDiv = joinInputEl ? joinInputEl.parentElement : null;
                 if (joinInputDiv) joinInputDiv.classList.add('hidden');
-            }, (errorMsg) => {
+            };
+
+            const onError = (errorMsg) => {
                 let displayMsg = errorMsg;
                 const errorStr = String(errorMsg);
                 if (errorStr && errorStr.includes("Could not connect to peer")) {
-                    displayMsg = "Host is offline or link expired. Please ask host to share a new link!";
+                    displayMsg = "Waiting for host to return... (Host might be in another app)";
+                    setTimeout(() => {
+                        if (!document.getElementById('connection-status').classList.contains('hidden')) {
+                            this.network.initClient(joinId, onInit, onError);
+                        }
+                    }, 3000);
                 } else if (errorMsg && errorMsg.type) {
                     displayMsg = errorMsg.type;
                 }
-                document.getElementById('connection-status').textContent = "Error: " + displayMsg;
-                document.getElementById('connection-status').style.color = "#ef4444";
-            });
+                document.getElementById('connection-status').textContent = displayMsg;
+                document.getElementById('connection-status').style.color = "#f59e0b";
+            };
+
+            this.network.initClient(joinId, onInit, onError);
         }
     }
 
@@ -1080,7 +1090,7 @@ class GameController {
 
         if (this.mobileHUDTimer > 0) {
             this.mobileHUDTimer -= dt;
-            if (this.mobileHUDTimer <= 0 && window.innerWidth <= 768 && this.selectedEntities.length === 0) {
+            if (this.mobileHUDTimer <= 0 && this.selectedEntities.length === 0) {
                 document.getElementById('bottom-bar').style.display = 'none';
             }
         }
