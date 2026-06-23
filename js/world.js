@@ -464,6 +464,9 @@ export class WorldMap {
         });
 
         groundMat.onBeforeCompile = (shader) => {
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 800;
+            if (isMobile) return;
+
             shader.uniforms.dirtMap = { value: dirtTex };
             shader.uniforms.rockMap = { value: rockTex };
             shader.uniforms.uCloudTime = { value: 0 };
