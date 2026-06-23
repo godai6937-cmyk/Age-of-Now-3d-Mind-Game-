@@ -711,7 +711,11 @@ h1, h2, h3, h4, .game-title {
         padding: 2px 4px;
         margin-top: 2px;
         min-height: 24px;
+        flex-wrap: nowrap;
+        white-space: nowrap;
+        overflow-x: auto;
     }
+    #top-bar::-webkit-scrollbar { display: none; }
     #bottom-bar {
         grid-template-columns: 160px 1fr 100px;
         height: 90px;
@@ -787,17 +791,27 @@ h1, h2, h3, h4, .game-title {
 
 @media(max-width: 768px) and (orientation: portrait) {
     #hud {
-        padding: 5px;
+        padding: 2px;
     }
     #top-bar {
-        flex-direction: column;
-        gap: 10px;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        gap: 4px;
+        overflow-x: auto;
+        white-space: nowrap;
     }
+    #top-bar::-webkit-scrollbar { display: none; }
     .resource-container {
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         justify-content: center;
-        gap: 10px;
+        gap: 4px;
     }
+    .resource { font-size: 0.65rem; padding: 1px 2px; gap: 2px; }
+    .resource .icon { font-size: 0.8rem; }
+    .game-phase-indicator { font-size: 0.65rem; gap: 4px; }
+    .game-phase-indicator #game-timer { font-size: 0.75rem; }
+    .top-bar-controls button { padding: 2px 4px; font-size: 0.65rem; }
+    #player-hud-info { display: none !important; }
     #bottom-bar {
         display: flex;
         flex-direction: column;
