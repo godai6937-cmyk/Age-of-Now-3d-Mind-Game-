@@ -28,9 +28,6 @@ export class NetworkController {
         this.game.localFaction = 'player';
         
         const peerConfig = {
-            host: window.location.hostname,
-            port: 9000,
-            path: '/peerjs',
             debug: 2,
             config: {
                 iceServers: [
@@ -177,9 +174,6 @@ export class NetworkController {
         this.isClient = true;
         
         const peerConfig = {
-            host: window.location.hostname,
-            port: 9000,
-            path: '/peerjs',
             debug: 2,
             config: {
                 iceServers: [
