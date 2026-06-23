@@ -86,7 +86,7 @@ export class WorldMap {
         // Store elevation data for querying
         this._elevationData = null;
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 800;
-        this._elevationSegments = isMobile ? 80 : 200;
+        this._elevationSegments = isMobile ? 120 : 200;
 
         // Map layout parameters
         this.layout = {
@@ -469,13 +469,13 @@ export class WorldMap {
             shader.uniforms.uCloudTime = { value: 0 };
 
             shader.vertexShader = shader.vertexShader
-                .replace('#include <common>', '#include <common>\nvarying vec3 vWorldPos;')
-                .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvWorldPos = worldPosition.xyz;');
+                .replace('#include <common>', '#include <common>\nvarying vec3 vWorldPos;\nvarying vec3 vWorldNormalCustom;')
+                .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvWorldPos = worldPosition.xyz;\nvWorldNormalCustom = normalize(mat3(modelMatrix) * normal);');
 
             shader.fragmentShader = shader.fragmentShader
                 .replace(
                     '#include <common>',
-                    '#include <common>\nvarying vec3 vWorldPos;\nuniform sampler2D dirtMap;\nuniform sampler2D rockMap;\nuniform float uCloudTime;\nfloat hash21(vec2 p) {\n    p = fract(p * vec2(123.34, 345.45));\n    p += dot(p, p + 34.345);\n    return fract(p.x * p.y);\n}\nfloat noise21(vec2 p) {\n    vec2 i = floor(p);\n    vec2 f = fract(p);\n    vec2 u = f * f * (3.0 - 2.0 * f);\n    return mix(\n        mix(hash21(i + vec2(0.0, 0.0)), hash21(i + vec2(1.0, 0.0)), u.x),\n        mix(hash21(i + vec2(0.0, 1.0)), hash21(i + vec2(1.0, 1.0)), u.x),\n        u.y\n    );\n}\nfloat fbm21(vec2 p) {\n    float value = 0.0;\n    float amp = 0.5;\n    for (int i = 0; i < 4; i++) {\n        value += noise21(p) * amp;\n        p = p * 2.02 + vec2(17.3, 11.7);\n        amp *= 0.5;\n    }\n    return value;\n}\nfloat cloudLayer(vec2 p) {\n    float c1 = sin(p.x * 0.025 + uCloudTime * 0.07) * 0.5 + 0.5;\n    float c2 = cos(p.y * 0.022 - uCloudTime * 0.04) * 0.5 + 0.5;\n    float c3 = sin((p.x + p.y) * 0.012 - uCloudTime * 0.05) * 0.5 + 0.5;\n    return c1 * 0.4 + c2 * 0.35 + c3 * 0.25;\n}'
+                    '#include <common>\nvarying vec3 vWorldPos;\nvarying vec3 vWorldNormalCustom;\nuniform sampler2D dirtMap;\nuniform sampler2D rockMap;\nuniform float uCloudTime;\nfloat hash21(vec2 p) {\n    p = fract(p * vec2(123.34, 345.45));\n    p += dot(p, p + 34.345);\n    return fract(p.x * p.y);\n}\nfloat noise21(vec2 p) {\n    vec2 i = floor(p);\n    vec2 f = fract(p);\n    vec2 u = f * f * (3.0 - 2.0 * f);\n    return mix(\n        mix(hash21(i + vec2(0.0, 0.0)), hash21(i + vec2(1.0, 0.0)), u.x),\n        mix(hash21(i + vec2(0.0, 1.0)), hash21(i + vec2(1.0, 1.0)), u.x),\n        u.y\n    );\n}\nfloat fbm21(vec2 p) {\n    float value = 0.0;\n    float amp = 0.5;\n    for (int i = 0; i < 4; i++) {\n        value += noise21(p) * amp;\n        p = p * 2.02 + vec2(17.3, 11.7);\n        amp *= 0.5;\n    }\n    return value;\n}\nfloat cloudLayer(vec2 p) {\n    float c1 = sin(p.x * 0.025 + uCloudTime * 0.07) * 0.5 + 0.5;\n    float c2 = cos(p.y * 0.022 - uCloudTime * 0.04) * 0.5 + 0.5;\n    float c3 = sin((p.x + p.y) * 0.012 - uCloudTime * 0.05) * 0.5 + 0.5;\n    return c1 * 0.4 + c2 * 0.35 + c3 * 0.25;\n}'
                 )
                 .replace(
                     '#include <map_fragment>',
@@ -512,7 +512,7 @@ export class WorldMap {
     rockTexel = mapTexelToLinear(rockTexel);
 
     float elevation = vWorldPos.y;
-    float slope = clamp(length(vec2(dFdx(vWorldPos.y), dFdy(vWorldPos.y))) * 18.0, 0.0, 1.0);
+    float slope = clamp((1.0 - vWorldNormalCustom.y) * 4.0, 0.0, 1.0);
     float shoreMask = 1.0 - smoothstep(0.16, 0.92, elevation);
     float cliffMask = max(smoothstep(0.16, 0.55, slope), smoothstep(1.4, 2.5, elevation) * 0.55);
     float pathMask = smoothstep(0.68, 0.86, fbm21(worldUv * 0.060 + vec2(20.0, 11.0)));
@@ -602,7 +602,7 @@ export class WorldMap {
     createWater() {
         const size = this.planeSize;
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 800;
-        const waterSegs = isMobile ? 16 : 128;
+        const waterSegs = isMobile ? 32 : 128;
         const waterGeo = new THREE.PlaneGeometry(size, size, waterSegs, waterSegs);
         waterGeo.rotateX(-Math.PI / 2);
 
