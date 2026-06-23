@@ -151,12 +151,14 @@ class GameController {
             this.camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
             this.updateCameraPosition();
 
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 800;
+
             // Renderer
-            this.renderer = new THREE.WebGLRenderer({ antialias: true });
-            this.renderer.setPixelRatio(window.devicePixelRatio);
+            this.renderer = new THREE.WebGLRenderer({ antialias: !isMobile });
+            this.renderer.setPixelRatio(isMobile ? 1 : Math.min(window.devicePixelRatio, 2));
             this.renderer.setSize(window.innerWidth, window.innerHeight);
-            this.renderer.shadowMap.enabled = true;
-            this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            this.renderer.shadowMap.enabled = !isMobile;
+            this.renderer.shadowMap.type = isMobile ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
             this.renderer.outputEncoding = THREE.sRGBEncoding;
             this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
             this.renderer.toneMappingExposure = 1.05;
@@ -168,11 +170,11 @@ class GameController {
 
             const sunLight = new THREE.DirectionalLight(0xfff5de, 1.26);
             sunLight.position.set(-34, 52, -18);
-            sunLight.castShadow = true;
+            sunLight.castShadow = !isMobile;
             
             // Configure high quality shadow camera
-            sunLight.shadow.mapSize.width = 2048;
-            sunLight.shadow.mapSize.height = 2048;
+            sunLight.shadow.mapSize.width = isMobile ? 512 : 2048;
+            sunLight.shadow.mapSize.height = isMobile ? 512 : 2048;
             sunLight.shadow.camera.near = 0.5;
             sunLight.shadow.camera.far = 150;
             const shadowBound = 45;

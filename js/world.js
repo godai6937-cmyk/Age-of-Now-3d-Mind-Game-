@@ -85,7 +85,8 @@ export class WorldMap {
         this.cloudTime = 0;
         // Store elevation data for querying
         this._elevationData = null;
-        this._elevationSegments = 200;
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 800;
+        this._elevationSegments = isMobile ? 80 : 200;
 
         // Map layout parameters
         this.layout = {
@@ -600,7 +601,9 @@ export class WorldMap {
 
     createWater() {
         const size = this.planeSize;
-        const waterGeo = new THREE.PlaneGeometry(size, size, 128, 128);
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 800;
+        const waterSegs = isMobile ? 16 : 128;
+        const waterGeo = new THREE.PlaneGeometry(size, size, waterSegs, waterSegs);
         waterGeo.rotateX(-Math.PI / 2);
 
         const waterMat = new THREE.MeshStandardMaterial({
