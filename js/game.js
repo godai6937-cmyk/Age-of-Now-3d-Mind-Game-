@@ -5,7 +5,7 @@ import { InputController } from './input.js?v=62';
 import { EnemyAI } from './ai.js?v=14';
 import { audio } from './audio.js?v=33';
 import { VFXSystem } from './vfx.js?v=14';
-import { NetworkController } from './network.js';
+import { NetworkController } from './network.js?v=2';
 
 class GameController {
     constructor() {

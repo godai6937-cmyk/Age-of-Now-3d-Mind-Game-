@@ -47,6 +47,14 @@ export class NetworkController {
             if (onReady) onReady(id);
             this.setupVoiceListeners();
         });
+        this.peer.on('error', (err) => {
+            console.error('PeerJS error:', err);
+            const statusEl = document.getElementById('connection-status');
+            if (statusEl) {
+                statusEl.textContent = "Network Error: " + err.type;
+                statusEl.style.color = "#ef4444";
+            }
+        });
 
         this.peer.on('connection', (conn) => {
             if (this.availableSlots.length === 0) {
