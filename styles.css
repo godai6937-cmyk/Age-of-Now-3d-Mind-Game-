@@ -1044,27 +1044,64 @@ h1, h2, h3, h4, .game-title {
     #top-bar {
         width: 100%;
         margin-top: 0;
-        flex-direction: column;
-        gap: 5px;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        gap: 6px;
+        padding: 4px 6px;
+        overflow-x: auto;
+        justify-content: flex-start;
+        align-items: center;
     }
+    #top-bar::-webkit-scrollbar {
+        display: none;
+    }
+    
+    #player-hud-info {
+        margin-right: 4px !important;
+        padding-right: 4px !important;
+        gap: 4px !important;
+    }
+    #hud-color-flag {
+        width: 14px !important;
+        height: 14px !important;
+    }
+    #hud-player-name {
+        font-size: 0.8rem !important;
+        white-space: nowrap;
+    }
+
     .resource-container {
-        gap: 8px;
-        flex-wrap: wrap;
-        justify-content: center;
+        gap: 4px;
+        flex-wrap: nowrap;
+        justify-content: flex-start;
     }
     .resource {
-        font-size: 0.85rem;
-        padding: 2px 5px;
+        font-size: 0.75rem;
+        padding: 2px 4px;
+        white-space: nowrap;
     }
     .resource .icon {
-        font-size: 1rem;
+        font-size: 0.85rem;
     }
     .game-phase-indicator {
-        font-size: 0.9rem;
+        font-size: 0.8rem;
+        white-space: nowrap;
+    }
+    #age-indicator {
+        font-size: 0.75rem;
+        padding: 2px 6px;
+    }
+    
+    .top-bar-controls {
+        gap: 4px;
+        flex-wrap: nowrap;
     }
     .top-bar-controls button {
-        padding: 4px 8px;
-        font-size: 0.85rem;
+        padding: 2px 6px;
+        font-size: 0.9rem;
+    }
+    #btn-restart {
+        display: none !important;
     }
     #bottom-bar {
         grid-template-columns: 140px 1fr 90px;
