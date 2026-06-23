@@ -447,7 +447,10 @@ export class InputController {
     showMobileHUD() {
         if (this.game) {
             this.game.mobileHUDTimer = 4.0;
-            document.getElementById('bottom-bar').style.display = 'grid';
+            document.getElementById('info-panel').style.visibility = 'visible';
+            document.getElementById('command-panel').style.visibility = 'visible';
+            document.getElementById('info-panel').style.pointerEvents = 'auto';
+            document.getElementById('command-panel').style.pointerEvents = 'auto';
         }
     }
 
@@ -522,7 +525,6 @@ export class InputController {
             }
             this.game.selectedEntities = [];
             this.game.updateHUD();
-            document.getElementById('command-panel').style.display = 'none';
         }
     }
 
@@ -676,8 +678,9 @@ export class InputController {
         // Walls can be built on any surface and anywhere, bypassing all restrictions
         if (this.placingType === 'woodwall' || this.placingType === 'stonewall') return true;
 
-        // Must be within maps limits
-        if (Math.abs(pos.x) > 36 || Math.abs(pos.z) > 36) return false;
+        // Must be within map limits
+        const halfSize = (this.game.world && this.game.world.planeSize) ? (this.game.world.planeSize / 2 - 2) : 123;
+        if (Math.abs(pos.x) > halfSize || Math.abs(pos.z) > halfSize) return false;
 
         // Terrain constraints
         if (this.game.world && this.game.world.getElevationAtCoords) {
@@ -700,18 +703,7 @@ export class InputController {
             }
         }
 
-        // Must check overlap with existing structures or resources
-        for (let i = 0; i < this.game.entities.length; i++) {
-            const ent = this.game.entities[i];
-            if (ent.dead) continue;
-            
-            // Minimal safety clearance (distance between centers)
-            const dist = pos.distanceTo(ent.position);
-            const clearance = ent.radius + 1.2; 
-            if (dist < clearance) {
-                return false;
-            }
-        }
+        // No overlap checks: villagers can build anywhere on land!
         return true;
     }
 

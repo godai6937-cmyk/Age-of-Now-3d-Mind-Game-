@@ -1,7 +1,7 @@
 // Main Game Controller Module
-import { meshBuilders, Villager, Soldier, Archer, Knight, Spearman, Crossbowman, SiegeRam, Monk, Paladin, Cannon, EliteArcher, Titan, WarElephant, Champion, FighterRobot, Helicopter, FighterPlane, FishBoat, WarShip, TransportBoat, Building, Tower, Projectile, Animal } from './entities.js?v=62';
-import { WorldMap } from './world.js?v=15';
-import { InputController } from './input.js?v=15';
+import { meshBuilders, Unit, Villager, Soldier, Archer, Knight, Spearman, Crossbowman, SiegeRam, Monk, Paladin, Cannon, EliteArcher, Titan, WarElephant, Champion, FighterRobot, Helicopter, FighterPlane, FishBoat, WarShip, TransportBoat, Building, Tower, Projectile, Animal } from './entities.js?v=62';
+import { WorldMap, NaturalResource } from './world.js?v=62';
+import { InputController } from './input.js?v=62';
 import { EnemyAI } from './ai.js?v=14';
 import { audio } from './audio.js?v=33';
 import { VFXSystem } from './vfx.js?v=14';
@@ -351,12 +351,50 @@ class GameController {
         }
         this.world.generate();
 
-        this.basePositions = {
-            'player': { x: -40, z: 40 },
-            'enemy': { x: 40, z: -40 },
-            'player3': { x: -40, z: -40 },
-            'player4': { x: 40, z: 40 }
-        };
+        // Generate random town center locations
+        this.basePositions = {};
+        const factions = ['player', 'enemy', 'player3', 'player4'];
+        const minSpacing = 80; // Minimum distance between any two town centers
+        const mapLimit = (this.world.planeSize / 2) - 30; // Keep them away from map edges
+        
+        let attempts = 0;
+        let placed = 0;
+        
+        while (placed < 4 && attempts < 1000) {
+            attempts++;
+            // Generate random coordinate using world's PRNG for determinism
+            const x = (this.world.prng.next() * 2 - 1) * mapLimit;
+            const z = (this.world.prng.next() * 2 - 1) * mapLimit;
+            
+            // Must be on land
+            if (this.world.getElevationAtCoords(x, z) < 0.25) continue;
+            
+            // Check spacing with already placed factions
+            let tooClose = false;
+            for (let i = 0; i < placed; i++) {
+                const otherPos = this.basePositions[factions[i]];
+                const dist = Math.hypot(x - otherPos.x, z - otherPos.z);
+                if (dist < minSpacing) {
+                    tooClose = true;
+                    break;
+                }
+            }
+            
+            if (!tooClose) {
+                this.basePositions[factions[placed]] = { x: Math.floor(x), z: Math.floor(z) };
+                placed++;
+            }
+        }
+        
+        // Fallback if we couldn't place them due to water/spacing issues
+        if (placed < 4) {
+            this.basePositions = {
+                'player': { x: -40, z: 40 },
+                'enemy': { x: 40, z: -40 },
+                'player3': { x: -40, z: -40 },
+                'player4': { x: 40, z: 40 }
+            };
+        }
 
         // Host handles initial spawns locally in setupStartingBases
         // Clients just rely on network state updates, but we need to create the bases for all configured factions
@@ -539,7 +577,6 @@ class GameController {
                 alert("Please enter a valid invite code or link.");
                 return;
             }
-            
             // Extract code if it's a full URL
             try {
                 if (code.startsWith('http')) {
@@ -547,8 +584,6 @@ class GameController {
                     const joinParam = url.searchParams.get('join');
                     if (joinParam) {
                         code = joinParam;
-                    } else {
-                        // try to extract from the path or hash if necessary, but searchParams is standard for this game
                     }
                 }
             } catch(e) {}
@@ -556,6 +591,32 @@ class GameController {
             startAudioAndFullscreen();
             this.startGame('join', code);
         });
+
+        const btnLoad = document.getElementById('btn-mode-load');
+        if (btnLoad) {
+            btnLoad.addEventListener('click', () => {
+                document.getElementById('file-load-game').click();
+            });
+        }
+
+        const fileLoad = document.getElementById('file-load-game');
+        if (fileLoad) {
+            fileLoad.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const data = JSON.parse(event.target.result);
+                        startAudioAndFullscreen();
+                        this.loadGame(data);
+                    } catch (err) {
+                        alert("Failed to load save file: " + err.message);
+                    }
+                };
+                reader.readAsText(file);
+            });
+        }
 
         const copyTextToClipboard = (text) => {
             if (navigator.clipboard && window.isSecureContext) {
@@ -617,9 +678,9 @@ class GameController {
         }
 
         document.getElementById('btn-lobby-start').addEventListener('click', () => {
-            startAudioAndFullscreen();
+            audio.playClick();
             if (this.network && this.network.isHost) {
-                const mapType = 'random';
+                const mapType = document.getElementById('map-type-select') ? document.getElementById('map-type-select').value : 'random';
                 
                 // Initialize the world so seeds are generated before sending START_GAME payload
                 if (!this.world) {
@@ -632,6 +693,33 @@ class GameController {
                 this.startMultiplayerMatch({ seedX: this.world.seedX, seedZ: this.world.seedZ, lobbyState: this.network.lobbyState, difficulty: difficulty, mapType: mapType });
             }
         });
+
+        const lobbyLoadBtn = document.getElementById('btn-lobby-load-save');
+        const lobbyLoadInput = document.getElementById('file-lobby-load-save');
+        if (lobbyLoadBtn && lobbyLoadInput) {
+            lobbyLoadBtn.addEventListener('click', () => {
+                audio.playClick();
+                lobbyLoadInput.click();
+            });
+            lobbyLoadInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const data = JSON.parse(event.target.result);
+                        if (this.network && this.network.isHost) {
+                            this.network.broadcastSavedGame(data);
+                        }
+                        startAudioAndFullscreen();
+                        this.loadGame(data, true);
+                    } catch (err) {
+                        alert("Failed to load save file: " + err.message);
+                    }
+                };
+                reader.readAsText(file);
+            });
+        }
 
         document.querySelectorAll('.toggle-pc-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -681,6 +769,14 @@ class GameController {
             this.dom.audioToggle.textContent = isMuted ? '🔇' : '🔊';
             audio.playClick();
         });
+
+        const saveBtn = document.getElementById('btn-save');
+        if (saveBtn) {
+            saveBtn.addEventListener('click', () => {
+                audio.playClick();
+                this.saveGame();
+            });
+        }
 
         document.getElementById('btn-pause').addEventListener('click', () => {
             this.gamePaused = !this.gamePaused;
@@ -1091,7 +1187,10 @@ class GameController {
         if (this.mobileHUDTimer > 0) {
             this.mobileHUDTimer -= dt;
             if (this.mobileHUDTimer <= 0 && this.selectedEntities.length === 0) {
-                document.getElementById('bottom-bar').style.display = 'none';
+                document.getElementById('info-panel').style.visibility = 'hidden';
+                document.getElementById('command-panel').style.visibility = 'hidden';
+                document.getElementById('info-panel').style.pointerEvents = 'none';
+                document.getElementById('command-panel').style.pointerEvents = 'none';
             }
         }
 
@@ -1648,17 +1747,22 @@ class GameController {
             infoDetails.classList.add('hidden');
             this.drawCommandsCard(null);
             
-            if (window.innerWidth <= 768) {
-                if (this.mobileHUDTimer <= 0) {
-                    document.getElementById('bottom-bar').style.display = 'none';
-                } else {
-                    document.getElementById('bottom-bar').style.display = 'grid';
-                }
+            if (this.mobileHUDTimer <= 0) {
+                document.getElementById('info-panel').style.visibility = 'hidden';
+                document.getElementById('command-panel').style.visibility = 'hidden';
+                document.getElementById('info-panel').style.pointerEvents = 'none';
+                document.getElementById('command-panel').style.pointerEvents = 'none';
             } else {
-                document.getElementById('bottom-bar').style.display = 'grid';
+                document.getElementById('info-panel').style.visibility = 'visible';
+                document.getElementById('command-panel').style.visibility = 'visible';
+                document.getElementById('info-panel').style.pointerEvents = 'auto';
+                document.getElementById('command-panel').style.pointerEvents = 'auto';
             }
         } else if (this.selectedEntities.length === 1) {
-            document.getElementById('bottom-bar').style.display = 'grid';
+            document.getElementById('info-panel').style.visibility = 'visible';
+            document.getElementById('command-panel').style.visibility = 'visible';
+            document.getElementById('info-panel').style.pointerEvents = 'auto';
+            document.getElementById('command-panel').style.pointerEvents = 'auto';
             infoEmpty.classList.add('hidden');
             infoDetails.classList.remove('hidden');
             infoDetails.classList.remove('hidden');
@@ -1741,7 +1845,10 @@ class GameController {
 
             this.drawCommandsCard(ent);
         } else {
-            document.getElementById('bottom-bar').style.display = 'grid';
+            document.getElementById('info-panel').style.visibility = 'visible';
+            document.getElementById('command-panel').style.visibility = 'visible';
+            document.getElementById('info-panel').style.pointerEvents = 'auto';
+            document.getElementById('command-panel').style.pointerEvents = 'auto';
             // Multiple units selected
             infoEmpty.classList.add('hidden');
             infoDetails.classList.remove('hidden');
@@ -2596,6 +2703,216 @@ class GameController {
 
         // Start showcase from age 1
         showcaseAge(1);
+    }
+
+    async saveGame() {
+        if (this.network && this.network.isClient) {
+            alert("Only the Host can save multiplayer games.");
+            return;
+        }
+
+        const saveData = {
+            matchTime: this.matchTime,
+            playerAge: this.playerAge,
+            enemyAge: this.enemyAge,
+            playerResources: this.playerResources,
+            worldSeedX: this.world.seedX,
+            worldSeedZ: this.world.seedZ,
+            entities: this.entities.map(e => ({
+                id: e.id,
+                type: e.type,
+                faction: e.faction,
+                health: e.health,
+                maxHealth: e.maxHealth,
+                capacity: e.capacity,
+                x: e.position ? e.position.x : 0,
+                z: e.position ? e.position.z : 0,
+                yRot: (e.mesh && e.mesh.rotation) ? e.mesh.rotation.y : 0,
+                isCompleted: e.isCompleted !== undefined ? e.isCompleted : true,
+                buildProgress: e.buildProgress || 0
+            })),
+            aiPlayers: this.aiPlayers.map(ai => ({
+                faction: ai.faction,
+                resources: ai.resources,
+                age: ai.age
+            }))
+        };
+
+        const d = new Date();
+        const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        const timeStr = `${String(d.getHours()).padStart(2, '0')}-${String(d.getMinutes()).padStart(2, '0')}-${String(d.getSeconds()).padStart(2, '0')}`;
+        const suggestedName = `age_of_now_save_${dateStr}_${timeStr}.json`;
+
+        try {
+            if (window.showSaveFilePicker) {
+                const handle = await window.showSaveFilePicker({
+                    suggestedName: suggestedName,
+                    types: [{
+                        description: 'JSON Save File',
+                        accept: {'application/json': ['.json']},
+                    }],
+                });
+                const writable = await handle.createWritable();
+                await writable.write(JSON.stringify(saveData));
+                await writable.close();
+            } else {
+                const blob = new Blob([JSON.stringify(saveData)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = suggestedName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+        } catch (err) {
+            console.log("Save cancelled or failed:", err);
+        }
+    }
+
+    loadGame(data, isMultiplayer = false) {
+        if (this.dom.startScreen) this.dom.startScreen.classList.add('hidden');
+        this.dom.hud.classList.remove('hidden');
+
+        // Setup Player Info
+        if (!isMultiplayer) {
+            this.localFaction = 'player';
+        }
+        
+        this.playerName = 'Player 1';
+        const nameInput = document.getElementById('player-name-input');
+        if (nameInput && nameInput.value.trim()) {
+            this.playerName = nameInput.value.trim();
+        }
+        const hudName = document.getElementById('hud-player-name');
+        if (hudName) hudName.textContent = this.playerName;
+        const flag = document.getElementById('hud-color-flag');
+        if (flag) flag.style.backgroundColor = '#2563eb';
+
+        // Clear existing state
+        this.entities.forEach(ent => {
+            if (ent.mesh) this.scene.remove(ent.mesh);
+            if (ent.healthBar) this.scene.remove(ent.healthBar);
+            if (ent.model) this.scene.remove(ent.model);
+            if (ent.projectileMesh) this.scene.remove(ent.projectileMesh);
+        });
+        this.entities = [];
+        this.selectedEntities = [];
+
+        // Apply loaded state
+        this.matchTime = data.matchTime || 0;
+        this.playerAge = data.playerAge || 1;
+        this.enemyAge = data.enemyAge || 1;
+        if (data.playerResources) {
+            this.playerResources = data.playerResources;
+        }
+
+        // Generate World
+        this.world = new WorldMap(this.scene, this, data.worldSeedX, data.worldSeedZ, 'random');
+        this.world.generate();
+
+        // Clear the newly generated resources/animals to avoid duplication
+        this.entities.forEach(ent => {
+            if (ent.mesh) this.scene.remove(ent.mesh);
+            if (ent.healthBar) this.scene.remove(ent.healthBar);
+            if (ent.model) this.scene.remove(ent.model);
+        });
+        this.entities = [];
+
+        // Restore Entities
+        let maxId = 0;
+        if (data.entities) {
+            data.entities.forEach(eData => {
+                if (eData.id > maxId && eData.id < 1000) {
+                    maxId = eData.id;
+                }
+                
+                let ent;
+                if (['towncenter', 'barracks', 'tower', 'farm'].includes(eData.type)) {
+                    ent = new Building(eData.id, eData.faction, eData.type, eData.maxHealth, eData.x, eData.z, {});
+                    ent.isCompleted = eData.isCompleted;
+                    ent.buildProgress = eData.buildProgress || 0;
+                    
+                    if (eData.type === 'towncenter') ent.mesh = this.builders.createTownCenter(eData.faction);
+                    else if (eData.type === 'barracks') ent.mesh = this.builders.createBarracks(eData.faction);
+                    else if (eData.type === 'tower') ent.mesh = this.builders.createTower(eData.faction);
+                    else if (eData.type === 'farm') ent.mesh = this.builders.createFarm(eData.faction);
+
+                    if (ent.mesh) {
+                        ent.alignMesh();
+                        ent.mesh.rotation.y = eData.yRot || 0;
+                        this.scene.add(ent.mesh);
+                        if (!ent.isCompleted && ent.mesh.material) {
+                            ent.mesh.material.transparent = true;
+                            ent.mesh.material.opacity = 0.5;
+                            ent.mesh.position.y = -2 + (ent.buildProgress / 100) * 2;
+                        }
+                    }
+                } else if (['villager', 'soldier', 'archer'].includes(eData.type)) {
+                    if (eData.type === 'villager') ent = new Villager(eData.id, eData.faction, eData.x, eData.z);
+                    else if (eData.type === 'soldier') ent = new Soldier(eData.id, eData.faction, eData.x, eData.z);
+                    else if (eData.type === 'archer') ent = new Archer(eData.id, eData.faction, eData.x, eData.z);
+                    ent.state = 'idle';
+                    if (eData.type === 'villager') ent.mesh = this.builders.createVillager(eData.faction);
+                    else if (eData.type === 'soldier') ent.mesh = this.builders.createSoldier(eData.faction);
+                    else if (eData.type === 'archer') ent.mesh = this.builders.createArcher(eData.faction);
+
+                    if (ent.mesh) {
+                        ent.alignMesh();
+                        ent.mesh.rotation.y = eData.yRot || 0;
+                        this.scene.add(ent.mesh);
+                    }
+                } else if (['deer', 'bear'].includes(eData.type)) {
+                    ent = new Animal(eData.id, eData.type, eData.maxHealth, eData.x, eData.z, eData.type === 'deer' ? 12 : 18);
+                    ent.state = 'idle';
+                    if (eData.type === 'deer') ent.mesh = this.builders.createDeer();
+                    else ent.mesh = this.builders.createBear();
+                    
+                    if (ent.mesh) {
+                        ent.alignMesh();
+                        ent.mesh.rotation.y = eData.yRot || 0;
+                        this.scene.add(ent.mesh);
+                    }
+                } else if (['tree', 'gold', 'stone', 'forage', 'fishzone'].includes(eData.type)) {
+                    ent = new NaturalResource(eData.id, eData.type, eData.x, eData.z, eData.capacity || eData.maxHealth);
+                    this.scene.add(ent.mesh);
+                }
+                
+                if (ent) {
+                    ent.health = eData.health;
+                    this.entities.push(ent);
+                }
+            });
+        }
+        
+        this.entityIdCounter = maxId + 1;
+
+        // Setup AI
+        this.aiPlayers = [];
+        if (data.aiPlayers && (!isMultiplayer || (this.network && this.network.isHost))) {
+            data.aiPlayers.forEach(aiData => {
+                let aiBase = { x: 40, z: -40 };
+                const aiTC = this.entities.find(e => e.faction === aiData.faction && e.type === 'towncenter');
+                if (aiTC && aiTC.position) {
+                    aiBase = { x: aiTC.position.x, z: aiTC.position.z };
+                }
+                const ai = new EnemyAI(this, aiData.faction, aiBase, 'normal');
+                ai.resources = aiData.resources || { food: 0, wood: 0, gold: 0, stone: 0, pop: 0 };
+                ai.age = aiData.age || 1;
+                this.aiPlayers.push(ai);
+            });
+        }
+
+        // Camera positioning
+        const pTC = this.entities.find(e => e.type === 'towncenter' && e.faction === 'player');
+        if (pTC) {
+            this.cameraTarget.copy(pTC.position);
+            this.camera.position.set(pTC.position.x, 35, pTC.position.z + 40);
+        }
+
+        this.gameStarted = true;
+        this.updateHUD();
     }
 }
 

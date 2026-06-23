@@ -2347,6 +2347,165 @@ export class Projectile {
     }
 }
 
+function findPathAStar(world, startX, startZ, endX, endZ) {
+    if (!world || !world._elevationGrid) return null;
+
+    const segments = world._elevationSegments || 200;
+    const size = world.mapSize || world.planeSize || 250;
+    const halfSize = size / 2;
+    const cellSize = size / segments;
+
+    const toGrid = (wx, wz) => {
+        let col = Math.round((wx + halfSize) / cellSize);
+        let row = Math.round((wz + halfSize) / cellSize);
+        col = Math.max(0, Math.min(segments, col));
+        row = Math.max(0, Math.min(segments, row));
+        return { col, row };
+    };
+
+    const toWorld = (col, row) => {
+        const wx = col * cellSize - halfSize;
+        const wz = row * cellSize - halfSize;
+        const elev = world._elevationGrid[row][col];
+        return new THREE.Vector3(wx, elev, wz);
+    };
+
+    const start = toGrid(startX, startZ);
+    const end = toGrid(endX, endZ);
+
+    if (start.col === end.col && start.row === end.row) return null;
+
+    const isWalkable = (col, row) => {
+        if (col < 0 || col > segments || row < 0 || row > segments) return false;
+        return world._elevationGrid[row][col] >= -0.1;
+    };
+
+    const startInWater = world._elevationGrid[start.row][start.col] < -0.1;
+
+    if (!isWalkable(end.col, end.row)) {
+        let bestDist = Infinity;
+        let bestCol = end.col;
+        let bestRow = end.row;
+        for (let r = 1; r <= 15; r++) {
+            let found = false;
+            for (let dc = -r; dc <= r; dc++) {
+                for (let dr = -r; dr <= r; dr++) {
+                    if (Math.abs(dc) !== r && Math.abs(dr) !== r) continue;
+                    const nc = end.col + dc;
+                    const nr = end.row + dr;
+                    if (isWalkable(nc, nr)) {
+                        const d = dc * dc + dr * dr;
+                        if (d < bestDist) {
+                            bestDist = d;
+                            bestCol = nc;
+                            bestRow = nr;
+                            found = true;
+                        }
+                    }
+                }
+            }
+            if (found) break;
+        }
+        end.col = bestCol;
+        end.row = bestRow;
+    }
+
+    const getKey = (col, row) => row * 300 + col;
+
+    const openList = [];
+    const openSet = new Set();
+    const closedSet = new Set();
+
+    const gScore = new Map();
+    const fScore = new Map();
+    const cameFrom = new Map();
+
+    const startKey = getKey(start.col, start.row);
+    gScore.set(startKey, 0);
+    fScore.set(startKey, Math.hypot(start.col - end.col, start.row - end.row));
+
+    openList.push({ col: start.col, row: start.row, f: fScore.get(startKey) });
+    openSet.add(startKey);
+
+    let iterations = 0;
+    const maxIterations = 1500;
+
+    const getCost = (col, row) => {
+        if (col < 0 || col > segments || row < 0 || row > segments) return Infinity;
+        const elev = world._elevationGrid[row][col];
+        if (elev < -0.1) {
+            return startInWater ? 50.0 : Infinity;
+        }
+        return 1.0;
+    };
+
+    while (openList.length > 0 && iterations < maxIterations) {
+        iterations++;
+        openList.sort((a, b) => a.f - b.f);
+        const current = openList.shift();
+        const currentKey = getKey(current.col, current.row);
+        openSet.delete(currentKey);
+
+        if (current.col === end.col && current.row === end.row) {
+            const path = [];
+            let curr = currentKey;
+            while (cameFrom.has(curr)) {
+                const col = curr % 300;
+                const row = Math.floor(curr / 300);
+                path.push(toWorld(col, row));
+                curr = cameFrom.get(curr);
+            }
+            path.reverse();
+            return path;
+        }
+
+        closedSet.add(currentKey);
+
+        const dirs = [
+            { dc: 1, dr: 0, cost: 1 },
+            { dc: -1, dr: 0, cost: 1 },
+            { dc: 0, dr: 1, cost: 1 },
+            { dc: 0, dr: -1, cost: 1 },
+            { dc: 1, dr: 1, cost: 1.414 },
+            { dc: -1, dr: 1, cost: 1.414 },
+            { dc: 1, dr: -1, cost: 1.414 },
+            { dc: -1, dr: -1, cost: 1.414 }
+        ];
+
+        for (const d of dirs) {
+            const ncol = current.col + d.dc;
+            const nrow = current.row + d.dr;
+            const neighborKey = getKey(ncol, nrow);
+
+            if (closedSet.has(neighborKey)) continue;
+
+            const cost = getCost(ncol, nrow);
+            if (cost === Infinity && neighborKey !== startKey) continue;
+
+            const tentativeGScore = gScore.get(currentKey) + d.cost * cost;
+            const currentG = gScore.has(neighborKey) ? gScore.get(neighborKey) : Infinity;
+
+            if (tentativeGScore < currentG) {
+                cameFrom.set(neighborKey, currentKey);
+                gScore.set(neighborKey, tentativeGScore);
+                const h = Math.hypot(ncol - end.col, nrow - end.row);
+                const f = tentativeGScore + h;
+                fScore.set(neighborKey, f);
+
+                if (!openSet.has(neighborKey)) {
+                    openList.push({ col: ncol, row: nrow, f });
+                    openSet.add(neighborKey);
+                } else {
+                    const openNode = openList.find(n => n.col === ncol && n.row === nrow);
+                    if (openNode) openNode.f = f;
+                }
+            }
+        }
+    }
+
+    return null;
+}
+
 // ========== UNIT BASE CLASS ==========
 export class Unit extends GameEntity {
     constructor(id, faction, type, maxHealth, x, z, speed) {
@@ -2367,6 +2526,9 @@ export class Unit extends GameEntity {
         this.autoMode = false;
         this.lastMoveSample = this.position.clone();
         this.stuckTimer = 0;
+        this.pathWaypoints = [];
+        this.pathFinalDest = null;
+        this.lastPathfindTime = 0;
     }
 
     moveTo(x, z) {
@@ -2377,12 +2539,18 @@ export class Unit extends GameEntity {
         this.targetPos.copy(getSpherePosition(wrappedX, clampedZ, elevation, R));
         this.targetEntity = null;
         this.state = 'MOVE';
+        this.pathWaypoints = [];
+        this.pathFinalDest = null;
+        this.stuckTimer = 0;
     }
 
     setOrder(state, target) {
         this.state = state;
         this.targetEntity = target;
         if (target) this.targetPos.copy(target.position);
+        this.pathWaypoints = [];
+        this.pathFinalDest = null;
+        this.stuckTimer = 0;
     }
 
     getApproachPosition(target, extraDistance = 0) {
@@ -3018,26 +3186,45 @@ export class Unit extends GameEntity {
     }
 
     moveTowardsTarget(dt, world, customArrivalDist = null) {
-        const dist = this.distXZ(this.position, this.targetPos);
-        const arrivalDist = customArrivalDist !== null ? customArrivalDist : (this.isFlying ? 3.0 : 0.4);
+        if (this.pathWaypoints && this.pathWaypoints.length > 0) {
+            if (this.pathFinalDest && this.targetPos.distanceTo(this.pathFinalDest) > 3.0) {
+                this.pathWaypoints = [];
+            }
+        }
+
+        let activeTarget = this.targetPos;
+        let isUsingWaypoint = false;
+        if (this.pathWaypoints && this.pathWaypoints.length > 0) {
+            activeTarget = this.pathWaypoints[0];
+            isUsingWaypoint = true;
+        }
+
+        const dist = this.distXZ(this.position, activeTarget);
+        const arrivalDist = isUsingWaypoint ? 1.0 : (customArrivalDist !== null ? customArrivalDist : (this.isFlying ? 3.0 : 0.4));
+        
         if (dist < arrivalDist) {
-            if (!this.isFlying) {
-                this.position.x = this.targetPos.x;
-                this.position.z = this.targetPos.z;
-                if (!this.isBoat) {
-                    this.position.y = this.targetPos.y;
+            if (isUsingWaypoint) {
+                this.pathWaypoints.shift();
+                return;
+            } else {
+                if (!this.isFlying) {
+                    this.position.x = this.targetPos.x;
+                    this.position.z = this.targetPos.z;
+                    if (!this.isBoat) {
+                        this.position.y = this.targetPos.y;
+                    }
                 }
+                if (this.state === 'MOVE') {
+                    this.state = 'IDLE';
+                }
+                this.stuckTimer = 0;
+                this.lastMoveSample.copy(this.position);
+                return;
             }
-            if (this.state === 'MOVE') {
-                this.state = 'IDLE';
-            }
-            this.stuckTimer = 0;
-            this.lastMoveSample.copy(this.position);
-            return;
         }
 
         const prevPos = this.position.clone();
-        const toTarget = this.targetPos.clone().sub(this.position);
+        const toTarget = activeTarget.clone().sub(this.position);
         toTarget.y = 0;
         const dir = toTarget.clone().normalize();
 
@@ -3139,18 +3326,51 @@ export class Unit extends GameEntity {
         this.logicalZ = this.position.z;
 
         const moved = this.position.distanceTo(prevPos);
-        if (dist > 0.6 && moved < Math.max(0.005, this.speed * dt * 0.12)) {
-            this.stuckTimer += dt;
-            if (this.stuckTimer > 0.55) {
-                // If auto-hunting warrior gets stuck, they should give up and roam to avoid water traps
-                if (this.autoMode && this.type !== 'villager') {
-                    const angle = Math.random() * Math.PI * 2;
-                    const roamDist = 15 + Math.random() * 15;
-                    this.moveTo(this.position.x + Math.cos(angle) * roamDist, this.position.z + Math.sin(angle) * roamDist);
-                    this.stuckTimer = 0;
-                    return;
+        const finalDist = this.distXZ(this.position, this.targetPos);
+        
+        let needsPathfind = false;
+        let isRoamFallback = false;
+        
+        if (finalDist > 0.6) {
+            const inWater = !this.isFlying && !this.isBoat && (world && world.getElevationAtCoords && world.getElevationAtCoords(this.position.x, this.position.z) < -0.1);
+            if (inWater && (!this.pathWaypoints || this.pathWaypoints.length === 0)) {
+                needsPathfind = true;
+            } else if (moved < Math.max(0.005, this.speed * dt * 0.12)) {
+                this.stuckTimer += dt;
+                if (this.stuckTimer > 0.55) {
+                    needsPathfind = true;
+                    isRoamFallback = true;
                 }
+            } else {
+                this.stuckTimer = Math.max(0, this.stuckTimer - dt);
+            }
+        }
 
+        if (needsPathfind) {
+            // If auto-hunting warrior gets stuck, they should give up and roam to avoid water traps
+            if (isRoamFallback && this.autoMode && this.type !== 'villager') {
+                const angle = Math.random() * Math.PI * 2;
+                const roamDist = 15 + Math.random() * 15;
+                this.moveTo(this.position.x + Math.cos(angle) * roamDist, this.position.z + Math.sin(angle) * roamDist);
+                this.stuckTimer = 0;
+                return;
+            }
+
+            if (!this.isFlying && !this.isBoat) {
+                const now = this.animTime;
+                if (!this.lastPathfindTime || now - this.lastPathfindTime > 1.0) {
+                    this.lastPathfindTime = now;
+                    const path = findPathAStar(world, this.position.x, this.position.z, this.targetPos.x, this.targetPos.z);
+                    if (path && path.length > 0) {
+                        this.pathWaypoints = path;
+                        this.pathFinalDest = this.targetPos.clone();
+                        this.stuckTimer = 0;
+                        return;
+                    }
+                }
+            }
+
+            if (isRoamFallback) {
                 const unstuckAngle = this.animTime * 7.123 + this.id;
                 const pushX = Math.cos(unstuckAngle) * 0.18;
                 const pushZ = Math.sin(unstuckAngle) * 0.18;
@@ -3203,7 +3423,7 @@ export class Unit extends GameEntity {
                 this.stuckTimer = 0;
             }
         } else {
-            this.stuckTimer = 0;
+            this.stuckTimer = Math.max(0, this.stuckTimer - dt);
         }
         this.lastMoveSample.copy(this.position);
 
@@ -3497,7 +3717,7 @@ export class Villager extends Unit {
             return;
         }
 
-        const attackSpot = this.getApproachPosition(this.targetEntity, this.attackRange);
+        const attackSpot = this.getApproachPosition(this.targetEntity, 0.1); // Get close for melee
         const dist = this.distXZ(this.position, attackSpot);
         if (dist > 0.5) {
             this.targetPos.copy(attackSpot);
@@ -3540,7 +3760,7 @@ export class Soldier extends Unit {
             if (nextEnemy) { this.targetEntity = nextEnemy; }
             else { this.state = 'IDLE'; return; }
         }
-        const attackSpot = this.getApproachPosition(this.targetEntity, this.attackRange);
+        const attackSpot = this.getApproachPosition(this.targetEntity, 0.1); // Get close for melee
         const dist = this.distXZ(this.position, attackSpot);
         const range = Math.max(0.5, this.radius + 0.1);
         if (dist > range) {
@@ -3609,7 +3829,7 @@ export class Knight extends Unit {
             if (nextEnemy) { this.targetEntity = nextEnemy; }
             else { this.state = 'IDLE'; return; }
         }
-        const attackSpot = this.getApproachPosition(this.targetEntity, this.attackRange);
+        const attackSpot = this.getApproachPosition(this.targetEntity, 0.1); // Get close for melee
         const dist = this.distXZ(this.position, attackSpot);
         if (dist > 0.6) {
             this.targetPos.copy(attackSpot);
@@ -3645,7 +3865,7 @@ export class Spearman extends Unit {
             if (nextEnemy) { this.targetEntity = nextEnemy; }
             else { this.state = 'IDLE'; return; }
         }
-        const attackSpot = this.getApproachPosition(this.targetEntity, this.attackRange);
+        const attackSpot = this.getApproachPosition(this.targetEntity, 0.1); // Get close for melee
         const dist = this.distXZ(this.position, attackSpot);
         if (dist > 0.6) {
             this.targetPos.copy(attackSpot);
@@ -3712,7 +3932,7 @@ export class SiegeRam extends Unit {
         if (!this.targetEntity || this.targetEntity.dead) {
             this.state = 'IDLE'; return;
         }
-        const attackSpot = this.getApproachPosition(this.targetEntity, this.attackRange);
+        const attackSpot = this.getApproachPosition(this.targetEntity, 0.1); // Get close for melee
         const dist = this.distXZ(this.position, attackSpot);
         if (dist > 0.8) {
             this.targetPos.copy(attackSpot);
@@ -3817,7 +4037,7 @@ export class Paladin extends Unit {
             if (nextEnemy) { this.targetEntity = nextEnemy; }
             else { this.state = 'IDLE'; return; }
         }
-        const attackSpot = this.getApproachPosition(this.targetEntity, this.attackRange);
+        const attackSpot = this.getApproachPosition(this.targetEntity, 0.1); // Get close for melee
         const dist = this.distXZ(this.position, attackSpot);
         if (dist > 0.6) {
             this.targetPos.copy(attackSpot);
@@ -3917,7 +4137,7 @@ export class Titan extends Unit {
             if (nextEnemy) { this.targetEntity = nextEnemy; }
             else { this.state = 'IDLE'; return; }
         }
-        const attackSpot = this.getApproachPosition(this.targetEntity, this.attackRange);
+        const attackSpot = this.getApproachPosition(this.targetEntity, 0.1); // Get close for melee
         const dist = this.distXZ(this.position, attackSpot);
         if (dist > 1.0) {
             this.targetPos.copy(attackSpot);
@@ -3958,7 +4178,7 @@ export class WarElephant extends Unit {
             if (nextEnemy) { this.targetEntity = nextEnemy; }
             else { this.state = 'IDLE'; return; }
         }
-        const attackSpot = this.getApproachPosition(this.targetEntity, this.attackRange);
+        const attackSpot = this.getApproachPosition(this.targetEntity, 0.1); // Get close for melee
         const dist = this.distXZ(this.position, attackSpot);
         if (dist > 0.8) {
             this.targetPos.copy(attackSpot);
@@ -3991,7 +4211,7 @@ export class Champion extends Unit {
             if (nextEnemy) { this.targetEntity = nextEnemy; }
             else { this.state = 'IDLE'; return; }
         }
-        const attackSpot = this.getApproachPosition(this.targetEntity, this.attackRange);
+        const attackSpot = this.getApproachPosition(this.targetEntity, 0.1); // Get close for melee
         const dist = this.distXZ(this.position, attackSpot);
         if (dist > 0.6) {
             this.targetPos.copy(attackSpot);

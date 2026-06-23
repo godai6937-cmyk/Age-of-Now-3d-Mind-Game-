@@ -94,6 +94,7 @@
                 <button id="btn-toggle-mic" class="hidden" title="Toggle Microphone" style="font-size:1.2rem; background:rgba(239, 68, 68, 0.8); border:1px solid #ef4444; border-radius:4px; padding:0 8px; cursor:pointer;">🔇</button>
                 <button id="btn-recalibrate" title="Recalibrate Tilt (Enable Sensors)" style="font-size:1.2rem; background:rgba(0,0,0,0.5); border:1px solid #d4af37; border-radius:4px; padding:0 8px; cursor:pointer;">📱</button>
                 <button id="btn-pause" title="Pause Game">⏸️</button>
+                <button id="btn-save" title="Save Game">💾</button>
                 <button id="btn-restart" title="Restart Game">🔄</button>
             </div>
         </div>
@@ -155,6 +156,36 @@
 
     <!-- UI Screen: Main Screen / How to Play / Start -->
     <div id="start-screen" class="overlay-screen">
+        <!-- Worldwide Players Counter -->
+        <div style="position: absolute; top: 20px; left: 20px; background: rgba(0, 0, 0, 0.6); padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); display: flex; align-items: center; gap: 8px; font-family: 'Inter', sans-serif;">
+            <div style="width: 10px; height: 10px; background-color: #10b981; border-radius: 50%; box-shadow: 0 0 8px #10b981;"></div>
+            <span style="color: #9ca3af; font-size: 0.9rem; font-weight: 600;">Worldwide Players:</span>
+            <span id="worldwide-player-count" style="color: #fff; font-size: 1.1rem; font-weight: bold; font-family: monospace;">11,005</span>
+        </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const countEl = document.getElementById('worldwide-player-count');
+                
+                async function updateRealPlayerCount() {
+                    try {
+                        const response = await fetch('http://localhost:9000/api/player-count');
+                        if (response.ok) {
+                            const data = await response.json();
+                            const realCount = 11004 + Math.max(1, data.count); // +1 minimum for current player
+                            if (countEl) countEl.textContent = realCount.toLocaleString();
+                        }
+                    } catch (error) {
+                        // Server offline - show base + 1 for current player
+                        if (countEl) countEl.textContent = '11,005';
+                    }
+                }
+                
+                // Fetch immediately and then every 5 seconds
+                updateRealPlayerCount();
+                setInterval(updateRealPlayerCount, 5000);
+            });
+        </script>
+
         <div class="screen-content">
             <h1 class="game-title">AGE OF NOW</h1>
             <p class="subtitle">A 3D Real-Time Strategy Adventure in Your Browser</p>
@@ -181,7 +212,11 @@
 
             <!-- New Mode Selection -->
             <div id="mode-selection" style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px;">
-                <button id="btn-mode-host" class="btn-primary" style="padding: 15px; font-size: 1.2rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%);">👑 START NEW GAME</button>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button id="btn-mode-host" class="btn-primary" style="flex: 1; min-width: 200px; padding: 15px; font-size: 1.2rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%);">👑 START NEW GAME</button>
+                    <button id="btn-mode-load" class="btn-primary" style="flex: 1; min-width: 200px; padding: 15px; font-size: 1.2rem; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">📂 LOAD GAME</button>
+                    <input type="file" id="file-load-game" accept=".json" style="display: none;">
+                </div>
                 <div style="display: flex; flex-direction: column; gap: 10px; background: rgba(0,0,0,0.4); padding: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
                     <p style="margin: 0; color: #d4af37; font-weight: bold;">Or Join Existing Room:</p>
                     <div style="display: flex; gap: 10px;">
@@ -247,6 +282,8 @@
             <button id="btn-all-ages-demo" class="btn-primary" style="width: 100%; margin-bottom: 10px; font-size: 1.1rem; padding: 12px; background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);">🎬 SHOW ALL AGES DEMO</button>
             <div style="display: flex; gap: 10px; justify-content: center; align-items: center;">
                 <button id="btn-lobby-start" class="btn-primary host-only" style="flex: 1; font-size: 1.2rem; padding: 15px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">START GAME</button>
+                <button id="btn-lobby-load-save" class="btn-primary host-only" style="flex: 1; font-size: 1.2rem; padding: 15px; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">LOAD SAVE</button>
+                <input type="file" id="file-lobby-load-save" accept=".json" style="display: none;">
             </div>
             
             <p id="lobby-waiting-msg" class="client-only hidden" style="text-align: center; color: #f3e5ab; font-weight: bold; margin-top: 15px;">Waiting for Host to start the game...</p>
@@ -301,6 +338,6 @@
     <div id="voice-streams" class="hidden"></div>
 
     <!-- Import Main Game Scripts -->
-    <script type="module" src="js/game.js?v=31"></script>
+    <script type="module" src="js/game.js?v=32"></script>
 </body>
 </html>

@@ -97,7 +97,7 @@ export class WorldMap {
         };
     }
 
-    getElevationAtCoords(x, z) {
+    getRawElevation(x, z) {
         // Procedural elevation using noise — flat plane approach
         const nx = x + this.seedX;
         const nz = z + this.seedZ;
@@ -115,29 +115,53 @@ export class WorldMap {
             elevation += mountainFactor * mountainNoise * 4.0;
         }
         
-        // River valleys — two meandering rivers
+        // River valleys — two meandering SHALLOW rivers (fordable by units)
+        // Rivers are shallow dips, NOT deep water. Units can walk across.
         const river1Dist = Math.abs(z - Math.sin(nx * 0.05) * this.layout.r1amp - this.layout.r1z);
         const river2Dist = Math.abs(x - Math.cos(nz * 0.04) * this.layout.r2amp - this.layout.r2x);
-        if (river1Dist < 4) elevation = Math.min(elevation, -0.3 + river1Dist * 0.15);
-        if (river2Dist < 4) elevation = Math.min(elevation, -0.3 + river2Dist * 0.15);
+        if (river1Dist < 3) {
+            const riverDepth = -0.05 + river1Dist * 0.08; // Shallow: max depth -0.05 (above -0.1 threshold)
+            elevation = Math.min(elevation, riverDepth);
+        }
+        if (river2Dist < 3) {
+            const riverDepth = -0.05 + river2Dist * 0.08;
+            elevation = Math.min(elevation, riverDepth);
+        }
         
-        // Coastal lowlands at edges
+        // Coastal lowlands at edges — only deep water at very edge
         const halfSize = this.planeSize / 2;
         const edgeDist = Math.min(
             halfSize - Math.abs(x),
             halfSize - Math.abs(z)
         );
-        if (edgeDist < 15) {
-            const coastFactor = edgeDist / 15;
+        if (edgeDist < 10) {
+            const coastFactor = edgeDist / 10;
             elevation = elevation * coastFactor + (-0.5) * (1 - coastFactor);
         }
 
-        // Land bridge connecting bases (-40, 40) and (40, -40)
-        // Line equation: x + z = 0
-        const distToBridge = Math.abs(x + z) / 1.414;
-        if (distToBridge < 8) {
-            // Smoothly raise the river/ocean depth to land level (0.2)
-            const bridgeFactor = 1.0 - (distToBridge / 8);
+        // === LAND BRIDGES: Ensure all land is connected ===
+        // Main diagonal bridge connecting bases
+        const distToBridge1 = Math.abs(x + z) / 1.414;
+        if (distToBridge1 < 10) {
+            const bridgeFactor = 1.0 - (distToBridge1 / 10);
+            elevation = Math.max(elevation, 0.3 * bridgeFactor);
+        }
+        // Cross bridge (perpendicular to main)
+        const distToBridge2 = Math.abs(x - z) / 1.414;
+        if (distToBridge2 < 10) {
+            const bridgeFactor = 1.0 - (distToBridge2 / 10);
+            elevation = Math.max(elevation, 0.3 * bridgeFactor);
+        }
+        // Horizontal center bridge
+        const distToBridgeH = Math.abs(z);
+        if (distToBridgeH < 6) {
+            const bridgeFactor = 1.0 - (distToBridgeH / 6);
+            elevation = Math.max(elevation, 0.25 * bridgeFactor);
+        }
+        // Vertical center bridge
+        const distToBridgeV = Math.abs(x);
+        if (distToBridgeV < 6) {
+            const bridgeFactor = 1.0 - (distToBridgeV / 6);
             elevation = Math.max(elevation, 0.25 * bridgeFactor);
         }
 
@@ -171,6 +195,38 @@ export class WorldMap {
         }
         
         return elevation;
+    }
+
+    getElevationAtCoords(x, z) {
+        if (!this._elevationGrid) return this.getRawElevation(x, z);
+        
+        const halfSize = this.planeSize / 2;
+        const cellSize = this.planeSize / this._elevationSegments;
+        
+        let gx = (x + halfSize) / cellSize;
+        let gz = (z + halfSize) / cellSize;
+        
+        gx = Math.max(0, Math.min(this._elevationSegments, gx));
+        gz = Math.max(0, Math.min(this._elevationSegments, gz));
+        
+        const col0 = Math.floor(gx);
+        const row0 = Math.floor(gz);
+        const col1 = Math.min(this._elevationSegments, col0 + 1);
+        const row1 = Math.min(this._elevationSegments, row0 + 1);
+        
+        const tx = gx - col0;
+        const tz = gz - row0;
+        
+        const h00 = this._elevationGrid[row0][col0];
+        const h10 = this._elevationGrid[row0][col1];
+        const h01 = this._elevationGrid[row1][col0];
+        const h11 = this._elevationGrid[row1][col1];
+        
+        // Bilinear interpolation
+        const h0 = h00 * (1 - tx) + h10 * tx;
+        const h1 = h01 * (1 - tx) + h11 * tx;
+        
+        return h0 * (1 - tz) + h1 * tz;
     }
 
     generate() {
@@ -303,13 +359,27 @@ export class WorldMap {
             return t * t * (3 - 2 * t);
         };
 
+        this._elevationGrid = [];
+        for (let r = 0; r <= segments; r++) {
+            this._elevationGrid[r] = new Float32Array(segments + 1);
+        }
+
+        const halfSize = this.planeSize / 2;
+        const cellSize = this.planeSize / segments;
+
         for (let i = 0; i < posAttr.count; i++) {
             const x = posAttr.getX(i);
             const z = posAttr.getZ(i);
             
             // Get procedural elevation
-            const elevation = this.getElevationAtCoords(x, z);
+            const elevation = this.getRawElevation(x, z);
             posAttr.setY(i, elevation);
+            
+            const gridCol = Math.round((x + halfSize) / cellSize);
+            const gridRow = Math.round((z + halfSize) / cellSize);
+            if (gridRow >= 0 && gridRow <= segments && gridCol >= 0 && gridCol <= segments) {
+                this._elevationGrid[gridRow][gridCol] = elevation;
+            }
 
             // Add some noise to vertex colors to break up tiling
             const nx = x + this.seedX;
@@ -318,8 +388,8 @@ export class WorldMap {
             const nLarge = fbmNoise(nx * 0.35 + 50, nz * 0.35 - 20, 2);
             const grassVar = (nSmall * 0.65 + nLarge * 0.35);
             const slopeSample =
-                Math.abs(this.getElevationAtCoords(x + 0.75, z) - this.getElevationAtCoords(x - 0.75, z)) +
-                Math.abs(this.getElevationAtCoords(x, z + 0.75) - this.getElevationAtCoords(x, z - 0.75));
+                Math.abs(this.getRawElevation(x + 0.75, z) - this.getRawElevation(x - 0.75, z)) +
+                Math.abs(this.getRawElevation(x, z + 0.75) - this.getRawElevation(x, z - 0.75));
 
             const grassA = new THREE.Color(0.17, 0.37, 0.14);
             const grassB = new THREE.Color(0.30, 0.54, 0.20);
@@ -556,9 +626,9 @@ export class WorldMap {
             for (let i = 0; i < posAttr.count; i++) {
                 const x = posAttr.getX(i);
                 const z = posAttr.getZ(i);
-                const wave1 = Math.sin(x * 0.2 + this.waterTime * 1.5) * 0.04;
-                const wave2 = Math.cos(z * 0.15 + this.waterTime * 1.1) * 0.03;
-                const wave3 = Math.sin((x + z) * 0.1 + this.waterTime * 0.8) * 0.03;
+                const wave1 = Math.sin(x * 0.15 + this.waterTime * 0.6) * 0.02;
+                const wave2 = Math.cos(z * 0.10 + this.waterTime * 0.4) * 0.015;
+                const wave3 = Math.sin((x + z) * 0.08 + this.waterTime * 0.3) * 0.01;
                 const y = wave1 + wave2 + wave3;
                 posAttr.setXYZ(i, x, y, z);
             }
@@ -671,30 +741,7 @@ export class WorldMap {
             this.scene.add(rock);
         }
 
-        // Larger cliff and boulder formations to break up the flat silhouette
-        for (let i = 0; i < 30; i++) {
-            const x = this.prng.next() * this.planeSize - halfSize;
-            const z = this.prng.next() * this.planeSize - halfSize;
-            const elevation = this.getElevationAtCoords(x, z);
-            if (elevation < 0.85) continue;
-            let nearBase = false;
-            if (this.game && this.game.basePositions) {
-                for (const faction in this.game.basePositions) {
-                    const pos = this.game.basePositions[faction];
-                    if (Math.hypot(x - pos.x, z - pos.z) < 14) nearBase = true;
-                }
-            } else {
-                if (Math.hypot(x - (-40), z - 40) < 14) nearBase = true;
-                if (Math.hypot(x - 40, z - (-40)) < 14) nearBase = true;
-            }
-            if (nearBase) continue;
 
-            const formation = this.createCliffFormationMesh();
-            formation.position.set(x, elevation - 0.2, z);
-            formation.rotation.y = this.prng.next() * Math.PI * 2;
-            formation.scale.setScalar(1.1 + this.prng.next() * 1.7);
-            this.scene.add(formation);
-        }
     }
 
     createResources() {
@@ -740,7 +787,7 @@ export class WorldMap {
         };
 
         // Procedural Deep Forest Trees
-        for (let i = 0; i < 400; i++) {
+        for (let i = 0; i < 1500; i++) {
             const x = this.prng.next() * this.planeSize - halfSize;
             const z = this.prng.next() * this.planeSize - halfSize;
             
@@ -755,7 +802,7 @@ export class WorldMap {
         }
 
         // Procedural Minerals
-        for (let i = 0; i < 60; i++) {
+        for (let i = 0; i < 150; i++) {
             const x = this.prng.next() * this.planeSize - halfSize;
             const z = this.prng.next() * this.planeSize - halfSize;
             

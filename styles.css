@@ -359,8 +359,9 @@ h1, h2, h3, h4, .game-title {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
     gap: 8px;
-    height: 100%;
+    flex: 1;
     overflow-y: auto;
+    min-height: 0;
 }
 
 .cmd-btn {
@@ -703,11 +704,13 @@ h1, h2, h3, h4, .game-title {
         padding: 4px;
     }
     .hud-panel {
-        padding: 4px 8px;
+        padding: 4px 6px;
         border-radius: 8px;
     }
     #top-bar {
-        padding: 4px 8px;
+        padding: 2px 4px;
+        margin-top: 2px;
+        min-height: 24px;
     }
     #bottom-bar {
         grid-template-columns: 160px 1fr 100px;
@@ -726,7 +729,7 @@ h1, h2, h3, h4, .game-title {
     }
     .resource {
         font-size: 0.8rem;
-        padding: 2px;
+        padding: 1px 2px;
         gap: 2px;
     }
     .resource .icon {

@@ -28,6 +28,9 @@ export class NetworkController {
         this.game.localFaction = 'player';
         
         const peerConfig = {
+            host: window.location.hostname,
+            port: 9000,
+            path: '/peerjs',
             debug: 2,
             config: {
                 iceServers: [
@@ -150,10 +153,33 @@ export class NetworkController {
         }
     }
 
+    broadcastSavedGame(saveData) {
+        if (!this.isHost) return;
+        
+        // Disable AI for the enemy faction if it's assigned to a player
+        if (this.lobbyState[2].type === 'player') {
+            this.game.enemyIsPlayer = true;
+        } else {
+            this.game.enemyIsPlayer = false;
+        }
+
+        const payload = {
+            type: 'START_SAVED_GAME',
+            saveData: saveData
+        };
+        for (let conn of this.clientConnections) {
+            const slot = this.clientFactions.get(conn.peer);
+            conn.send({ ...payload, yourFaction: slot ? slot.faction : 'enemy' });
+        }
+    }
+
     initClient(hostId, onInit, onError) {
         this.isClient = true;
         
         const peerConfig = {
+            host: window.location.hostname,
+            port: 9000,
+            path: '/peerjs',
             debug: 2,
             config: {
                 iceServers: [
@@ -187,6 +213,11 @@ export class NetworkController {
                 } else if (data.type === 'START_GAME') {
                     if (this.game.startMultiplayerMatch) {
                         this.game.startMultiplayerMatch(data);
+                    }
+                } else if (data.type === 'START_SAVED_GAME') {
+                    if (data.yourFaction) this.game.localFaction = data.yourFaction;
+                    if (this.game.loadGame) {
+                        this.game.loadGame(data.saveData, true);
                     }
                 } else if (data.type === 'STATE') {
                     this.applyStateUpdate(data);
