@@ -1189,10 +1189,16 @@ class GameController {
         if (this.mobileHUDTimer > 0) {
             this.mobileHUDTimer -= dt;
             if (this.mobileHUDTimer <= 0 && this.selectedEntities.length === 0) {
-                document.getElementById('info-panel').style.visibility = 'hidden';
-                document.getElementById('command-panel').style.visibility = 'hidden';
-                document.getElementById('info-panel').style.pointerEvents = 'none';
-                document.getElementById('command-panel').style.pointerEvents = 'none';
+                const bottomBar = document.getElementById('bottom-bar');
+                const isMobileUI = window.innerWidth <= 950 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                if (isMobileUI) {
+                    if (bottomBar) bottomBar.style.display = 'none';
+                } else {
+                    document.getElementById('info-panel').style.visibility = 'hidden';
+                    document.getElementById('command-panel').style.visibility = 'hidden';
+                    document.getElementById('info-panel').style.pointerEvents = 'none';
+                    document.getElementById('command-panel').style.pointerEvents = 'none';
+                }
             }
         }
 
@@ -1744,23 +1750,32 @@ class GameController {
         const infoEmpty = document.getElementById('info-empty');
         const infoDetails = document.getElementById('info-details');
 
+        const bottomBar = document.getElementById('bottom-bar');
+        const isMobileUI = window.innerWidth <= 950 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
         if (this.selectedEntities.length === 0) {
             infoEmpty.classList.remove('hidden');
             infoDetails.classList.add('hidden');
             this.drawCommandsCard(null);
             
-            if (this.mobileHUDTimer <= 0) {
-                document.getElementById('info-panel').style.visibility = 'hidden';
-                document.getElementById('command-panel').style.visibility = 'hidden';
-                document.getElementById('info-panel').style.pointerEvents = 'none';
-                document.getElementById('command-panel').style.pointerEvents = 'none';
+            if (isMobileUI) {
+                if (bottomBar) bottomBar.style.display = 'none';
             } else {
-                document.getElementById('info-panel').style.visibility = 'visible';
-                document.getElementById('command-panel').style.visibility = 'visible';
-                document.getElementById('info-panel').style.pointerEvents = 'auto';
-                document.getElementById('command-panel').style.pointerEvents = 'auto';
+                if (bottomBar) bottomBar.style.display = 'grid';
+                if (this.mobileHUDTimer <= 0) {
+                    document.getElementById('info-panel').style.visibility = 'hidden';
+                    document.getElementById('command-panel').style.visibility = 'hidden';
+                    document.getElementById('info-panel').style.pointerEvents = 'none';
+                    document.getElementById('command-panel').style.pointerEvents = 'none';
+                } else {
+                    document.getElementById('info-panel').style.visibility = 'visible';
+                    document.getElementById('command-panel').style.visibility = 'visible';
+                    document.getElementById('info-panel').style.pointerEvents = 'auto';
+                    document.getElementById('command-panel').style.pointerEvents = 'auto';
+                }
             }
         } else if (this.selectedEntities.length === 1) {
+            if (bottomBar) bottomBar.style.display = 'grid';
             document.getElementById('info-panel').style.visibility = 'visible';
             document.getElementById('command-panel').style.visibility = 'visible';
             document.getElementById('info-panel').style.pointerEvents = 'auto';
@@ -1847,6 +1862,8 @@ class GameController {
 
             this.drawCommandsCard(ent);
         } else {
+            const bottomBar = document.getElementById('bottom-bar');
+            if (bottomBar) bottomBar.style.display = 'grid';
             document.getElementById('info-panel').style.visibility = 'visible';
             document.getElementById('command-panel').style.visibility = 'visible';
             document.getElementById('info-panel').style.pointerEvents = 'auto';
