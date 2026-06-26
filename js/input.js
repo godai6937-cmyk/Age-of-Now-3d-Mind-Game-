@@ -401,22 +401,30 @@ export class InputController {
                 const isDoubleTap = (now - (this.lastTapTime || 0) < 350);
                 this.lastTapTime = now;
 
-                if (isDoubleTap) {
-                    if (this.singleTapTimeout) {
-                        clearTimeout(this.singleTapTimeout);
-                        this.singleTapTimeout = null;
-                    }
-                    const hasPlayerUnitsSelected = this.game.selectedEntities.some(ent => ent.isUnit && ent.faction === this.game.localFaction && !ent.dead);
-                    if (hasPlayerUnitsSelected) {
-                        this.handleRightClickOrder();
+                const hasPlayerUnitsSelected = this.game.selectedEntities.some(ent => ent.isUnit && ent.faction === this.game.localFaction && !ent.dead);
+
+                let targetEnt = null;
+                this.raycaster.setFromCamera(this.pointer, this.camera);
+                const meshes = this.game.entities.filter(e => !e.dead && e.mesh).map(e => e.mesh);
+                const intersects = this.raycaster.intersectObjects(meshes, true);
+                if (intersects.length > 0) {
+                    let obj = intersects[0].object;
+                    while (obj.parent && obj.parent !== this.scene) { obj = obj.parent; }
+                    targetEnt = this.game.entities.find(e => e.mesh === obj);
+                }
+
+                if (hasPlayerUnitsSelected) {
+                    if (targetEnt && targetEnt.faction === this.game.localFaction) {
+                        if (isDoubleTap) {
+                            this.handleRightClickOrder();
+                        } else {
+                            this.handleSingleSelect();
+                        }
                     } else {
-                        this.handleSingleSelect();
+                        this.handleRightClickOrder();
                     }
                 } else {
-                    this.singleTapTimeout = setTimeout(() => {
-                        this.singleTapTimeout = null;
-                        this.handleSingleSelect();
-                    }, 350);
+                    this.handleSingleSelect();
                 }
             }
 
