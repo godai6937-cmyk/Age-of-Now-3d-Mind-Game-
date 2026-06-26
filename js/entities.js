@@ -2434,7 +2434,7 @@ function findPathAStar(world, startX, startZ, endX, endZ) {
         if (col < 0 || col > segments || row < 0 || row > segments) return Infinity;
         const elev = world._elevationGrid[row][col];
         if (elev < -0.1) {
-            return startInWater ? 50.0 : Infinity;
+            return 50.0;
         }
         return 1.0;
     };
@@ -3388,7 +3388,7 @@ export class Unit extends GameEntity {
                             nextZ = this.position.z;
                         }
                     } else {
-                        if (elev < -0.1 && !(myElev < -0.1 && elev > myElev)) {
+                        if (elev < -0.1 && myElev >= -0.1) {
                             nextX = this.position.x;
                             nextZ = this.position.z;
                         }
@@ -3399,10 +3399,7 @@ export class Unit extends GameEntity {
                             if (myElev > 0.25) return false;
                             return e > 0.25;
                         }
-                        if (this.type === 'villager') {
-                            return false;
-                        }
-                        return e < 0.25;
+                        return false;
                     };
                     if (isInvalid(elev)) canUnstuck = false;
                 }
