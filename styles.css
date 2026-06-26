@@ -813,20 +813,31 @@ h1, h2, h3, h4, .game-title {
     .top-bar-controls button { padding: 2px 4px; font-size: 0.65rem; }
     #player-hud-info { display: none !important; }
     #bottom-bar {
-        display: flex;
-        flex-direction: column;
+        display: grid;
+        grid-template-columns: 1fr 90px;
+        grid-template-rows: auto 1fr;
         height: auto;
         max-height: 50vh;
-    }
-    #minimap-panel {
-        display: none; /* Hide minimap on portrait phones to save space */
+        gap: 4px;
     }
     #info-panel {
+        grid-column: 1 / -1;
         min-height: 80px;
     }
     #command-panel {
-        flex: 1;
+        grid-column: 1;
+        grid-row: 2;
         overflow-y: auto;
+    }
+    #minimap-panel {
+        grid-column: 2;
+        grid-row: 2;
+        display: flex;
+        padding: 4px;
+    }
+    #minimap-canvas {
+        width: 75px;
+        height: 75px;
     }
     .command-grid {
         grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
