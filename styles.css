@@ -830,6 +830,7 @@ h1, h2, h3, h4, .game-title {
         grid-row: 2;
         display: flex;
         padding: 4px;
+        justify-content: flex-end;
     }
     .command-grid {
         grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
@@ -1039,7 +1040,7 @@ h1, h2, h3, h4, .game-title {
     }
     #hud {
         padding: 5px;
-        padding-bottom: max(20px, env(safe-area-inset-bottom, 20px));
+        padding-bottom: max(40px, env(safe-area-inset-bottom, 40px));
     }
     .hud-panel {
         padding: 8px 10px;
