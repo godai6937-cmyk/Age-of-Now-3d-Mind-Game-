@@ -717,13 +717,9 @@ h1, h2, h3, h4, .game-title {
     }
     #top-bar::-webkit-scrollbar { display: none; }
     #bottom-bar {
-        grid-template-columns: 160px 1fr 100px;
+        grid-template-columns: 160px 1fr 140px;
         height: 90px;
         gap: 4px;
-    }
-    #minimap-canvas {
-        width: 70px;
-        height: 70px;
     }
     .minimap-label {
         font-size: 0.6rem;
@@ -814,7 +810,7 @@ h1, h2, h3, h4, .game-title {
     #player-hud-info { display: none !important; }
     #bottom-bar {
         display: grid;
-        grid-template-columns: 1fr 90px;
+        grid-template-columns: 1fr 140px;
         grid-template-rows: auto 1fr;
         height: auto;
         max-height: 50vh;
@@ -834,10 +830,6 @@ h1, h2, h3, h4, .game-title {
         grid-row: 2;
         display: flex;
         padding: 4px;
-    }
-    #minimap-canvas {
-        width: 75px;
-        height: 75px;
     }
     .command-grid {
         grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
@@ -1115,7 +1107,7 @@ h1, h2, h3, h4, .game-title {
         display: none !important;
     }
     #bottom-bar {
-        grid-template-columns: 140px 1fr 90px;
+        grid-template-columns: 140px 1fr 140px;
         height: 90px;
         gap: 4px;
     }
@@ -1145,10 +1137,6 @@ h1, h2, h3, h4, .game-title {
     }
     .cmd-btn .cmd-icon {
         font-size: 1.2rem;
-    }
-    #minimap-canvas {
-        width: 80px;
-        height: 80px;
     }
     .tooltip {
         display: none !important; /* Tooltips don't work well on touch */
