@@ -2787,8 +2787,8 @@ export class Unit extends GameEntity {
         this.animateUnit(dt);
     }
 
-    animateUnit(dt) {
-        const isMoving = (this.state === 'MOVE' || 
+    animateUnit(dt, clientIsMoving = null) {
+        const isMoving = clientIsMoving !== null ? clientIsMoving : (this.state === 'MOVE' || 
             (this.state === 'GATHER' && this.targetEntity && this.distXZ(this.position, this.targetPos) > (this.gatherTargetType === 'farm' ? 0.15 : 0.55)) ||
             (this.state === 'RETURN_RESOURCE' && this.targetEntity && this.distXZ(this.position, this.targetPos) > 0.55) ||
             (this.state === 'REPAIR' && this.targetEntity && this.distXZ(this.position, this.targetPos) > 0.55) ||
@@ -4691,6 +4691,7 @@ export class Animal extends GameEntity {
     update(dt, world, game) {
         if (this.dead) return;
         this.animTime += dt;
+        this.animateUnit(dt);
 
         // Simple wandering logic
         if (this.state === 'IDLE') {
@@ -4709,11 +4710,6 @@ export class Animal extends GameEntity {
                 } else {
                     this.state = 'IDLE'; // Cancel wander if target is in deep water
                 }
-            }
-            // Idle animation (gentle bob or head movement)
-            if (this.type === 'deer') {
-                const head = this.mesh.children.find(c => c.geometry.type === 'BoxGeometry' && c.position.y > 0.4);
-                if (head) head.rotation.x = Math.sin(this.animTime * 2) * 0.1;
             }
         } else if (this.state === 'WANDER') {
             const dist = this.position.distanceTo(this.targetPos);
@@ -4743,18 +4739,6 @@ export class Animal extends GameEntity {
                 this.logicalZ = this.position.z;
 
                 this.alignMesh(dir);
-
-                // Walking animation
-                const bob = Math.abs(Math.sin(this.animTime * 12)) * 0.1;
-                this.mesh.position.y += bob;
-
-                if (this.type === 'deer') {
-                    // Leg swing
-                    const legs = this.mesh.children.filter(c => c.geometry.type === 'CylinderGeometry' && c.position.y < 0.2);
-                    legs.forEach((leg, i) => {
-                        leg.rotation.x = Math.sin(this.animTime * 12 + (i % 2 === 0 ? 0 : Math.PI)) * 0.3;
-                    });
-                }
             }
         }
         
@@ -4764,9 +4748,34 @@ export class Animal extends GameEntity {
             this.position.y = elevation;
             
             if (this.state === 'IDLE') {
-                const breathe = Math.sin(this.animTime * 1.5) * 0.008;
-                this.mesh.position.y += breathe;
                 this.alignMesh();
+            }
+        }
+    }
+
+    animateUnit(dt, clientIsMoving = null) {
+        if (!this.mesh) return;
+        const isMoving = clientIsMoving !== null ? clientIsMoving : (this.state === 'WANDER');
+
+        if (!isMoving) {
+            // Idle animation (gentle bob or head movement)
+            if (this.type === 'deer') {
+                const head = this.mesh.children.find(c => c.geometry.type === 'BoxGeometry' && c.position.y > 0.4);
+                if (head) head.rotation.x = Math.sin(this.animTime * 2) * 0.1;
+            }
+            const breathe = Math.sin(this.animTime * 1.5) * 0.008;
+            this.mesh.position.y += breathe;
+        } else {
+            // Walking animation
+            const bob = Math.abs(Math.sin(this.animTime * 12)) * 0.1;
+            this.mesh.position.y += bob;
+
+            if (this.type === 'deer') {
+                // Leg swing
+                const legs = this.mesh.children.filter(c => c.geometry.type === 'CylinderGeometry' && c.position.y < 0.2);
+                legs.forEach((leg, i) => {
+                    leg.rotation.x = Math.sin(this.animTime * 12 + (i % 2 === 0 ? 0 : Math.PI)) * 0.3;
+                });
             }
         }
     }

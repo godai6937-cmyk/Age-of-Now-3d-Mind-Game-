@@ -1314,7 +1314,11 @@ class GameController {
                     ent.update(dt, this.world, this);
                 } else {
                     // Client only updates animation mixer and smooth position interpolation
+                    let clientIsMoving = false;
                     if (ent.networkTargetPos) {
+                        const distToTarget = Math.sqrt(Math.pow(ent.networkTargetPos.x - ent.position.x, 2) + Math.pow(ent.networkTargetPos.z - ent.position.z, 2));
+                        clientIsMoving = distToTarget > 0.05;
+
                         ent.position.x += (ent.networkTargetPos.x - ent.position.x) * dt * 15;
                         ent.position.z += (ent.networkTargetPos.z - ent.position.z) * dt * 15;
                         if (ent.mesh) {
@@ -1332,6 +1336,13 @@ class GameController {
                     if (ent.isBuilding && !ent.isCompleted && ent.buildProgress !== undefined) {
                         const scaleY = 0.2 + (ent.buildProgress / 100) * 0.8;
                         if (ent.mesh) ent.mesh.scale.set(1.0, scaleY, 1.0);
+                    }
+
+                    // Apply manual procedural animations for clients
+                    if (typeof ent.animateUnit === 'function') {
+                        if (ent.animTime === undefined) ent.animTime = 0;
+                        ent.animTime += dt;
+                        ent.animateUnit(dt, clientIsMoving);
                     }
 
                     if (ent.mixer) {
