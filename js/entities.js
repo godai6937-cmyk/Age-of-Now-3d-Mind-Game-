@@ -2906,7 +2906,7 @@ export class Unit extends GameEntity {
                 // Slight upper body sway
                 this.mesh.rotation.z = Math.sin(time * 0.7) * 0.03;
                 this.mesh.rotation.x = Math.cos(time * 0.8) * 0.03;
-            } else if (this.state === 'ATTACK' && this.targetEntity) {
+            } else if (this.state === 'ATTACK') {
                 if (this.type === 'archer') {
                     // Archer firing animation
                     const progress = Math.max(0, 1.0 - (this.attackTimer / (this.attackCooldown || 1.6)));
@@ -2963,7 +2963,7 @@ export class Unit extends GameEntity {
                         }
                     });
                 }
-            } else if ((this.state === 'BUILD' || this.state === 'REPAIR') && this.targetEntity) {
+            } else if (this.state === 'BUILD' || this.state === 'REPAIR') {
                 this.mesh.position.y -= 0.15;
                 const t = Math.cos(this.animTime * 12); // 1 to -1
                 this.setToolType('hammer');
@@ -3001,7 +3001,7 @@ export class Unit extends GameEntity {
                     }
                 });
                 this.mesh.rotation.x = 0.1 - t * 0.1; // Body leans into the hammer strike
-            } else if (this.state === 'GATHER' && this.targetEntity) {
+            } else if (this.state === 'GATHER') {
                 if (this.gatherTargetType === 'tree') this.setToolType('axe');
                 else if (this.gatherTargetType === 'farm') this.setToolType('hoe');
                 else if (this.gatherTargetType === 'forage' || this.gatherTargetType === 'deer' || this.gatherTargetType === 'animal' || this.gatherTargetType === 'carcass') this.setToolType('none');

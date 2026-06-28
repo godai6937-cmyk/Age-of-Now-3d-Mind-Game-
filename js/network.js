@@ -265,7 +265,8 @@ export class NetworkController {
                 s: e.state,
                 c: e.isCompleted ? 1 : 0,
                 p: e.buildProgress ? Math.round(e.buildProgress) : 0,
-                r: e.mesh ? Math.round(e.mesh.rotation.y * 100) / 100 : 0
+                r: e.mesh ? Math.round(e.mesh.rotation.y * 100) / 100 : 0,
+                gt: e.gatherTargetType || null
             }));
 
         const payload = { type: 'STATE', state, resources: this.game.factionResources };
@@ -342,6 +343,7 @@ export class NetworkController {
                 entity.networkTargetRot = s.r;
                 entity.health = s.h;
                 entity.state = s.s;
+                entity.gatherTargetType = s.gt;
                 
                 if (s.c === 1 && entity.isBuilding && !entity.isCompleted) {
                     entity.completeConstruction();

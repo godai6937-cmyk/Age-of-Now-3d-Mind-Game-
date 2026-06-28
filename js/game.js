@@ -682,6 +682,12 @@ class GameController {
         document.getElementById('btn-lobby-start').addEventListener('click', () => {
             audio.playClick();
             if (this.network && this.network.isHost) {
+                // Default any empty slots to PC when host starts
+                for (let i = 2; i <= 4; i++) {
+                    if (this.network.lobbyState[i].type === 'empty') {
+                        this.network.lobbyState[i].type = 'pc';
+                    }
+                }
                 const mapType = document.getElementById('map-type-select') ? document.getElementById('map-type-select').value : 'random';
                 
                 // Initialize the world so seeds are generated before sending START_GAME payload
@@ -1447,6 +1453,14 @@ class GameController {
                     }
                 }
                 break;
+            case 'AUTO_MODE':
+                if (cmd.unitIds) {
+                    cmd.unitIds.forEach(id => {
+                        const unit = this.entities.find(e => e.id === id && e.faction === cmd.faction);
+                        if (unit) unit.autoMode = cmd.enable;
+                    });
+                }
+                break;
             case 'TRAIN':
                 if (cmd.buildingId && cmd.unitType) {
                     if (this.network && this.network.isHost) {
@@ -1571,11 +1585,15 @@ class GameController {
             ctx.beginPath();
             let color = '#9ca3af';
             let radius = 2;
-            if (ent.faction === this.localFaction) {
-                color = '#3b82f6';
-                radius = ent.isBuilding ? 4 : 2;
-            } else if (ent.faction !== this.localFaction && ent.faction !== 'neutral' && ent.faction !== 'nature') {
-                color = '#ef4444';
+            const factionColors = {
+                'player': '#3b82f6',
+                'enemy': '#ef4444',
+                'player3': '#10b981',
+                'player4': '#f59e0b'
+            };
+            
+            if (ent.faction !== 'neutral' && ent.faction !== 'nature') {
+                color = factionColors[ent.faction] || (ent.faction === this.localFaction ? '#3b82f6' : '#ef4444');
                 radius = ent.isBuilding ? 4 : 2;
             } else if (ent.faction === 'nature') {
                 if (ent.type === 'tree') color = '#10b981';
@@ -1929,13 +1947,10 @@ class GameController {
             `;
             autoBtn.addEventListener('click', () => {
                 const next = !allAuto;
-                units.forEach(u => {
-                    u.autoMode = next;
-                    if (next) {
-                        u.targetEntity = null;
-                        u.state = 'IDLE';
-                    }
-                });
+                const cmd = { type: 'AUTO_MODE', faction: this.localFaction, unitIds: units.map(u => u.id), enable: next };
+                if (this.network) this.network.sendCommand(cmd);
+                else this.processCommand(cmd);
+                
                 audio.playClick();
                 this.updateHUD();
             });
@@ -2018,7 +2033,11 @@ class GameController {
                 </div>
             `;
             autoBtn.addEventListener('click', () => {
-                entity.autoMode = !entity.autoMode;
+                const next = !entity.autoMode;
+                const cmd = { type: 'AUTO_MODE', faction: this.localFaction, unitIds: [entity.id], enable: next };
+                if (this.network) this.network.sendCommand(cmd);
+                else this.processCommand(cmd);
+                
                 audio.playClick();
                 this.drawCommandsCard(entity); // Redraw to update active state
             });
@@ -2195,7 +2214,11 @@ class GameController {
                 </div>
             `;
             autoBtn.addEventListener('click', () => {
-                entity.autoMode = !entity.autoMode;
+                const next = !entity.autoMode;
+                const cmd = { type: 'AUTO_MODE', faction: this.localFaction, unitIds: [entity.id], enable: next };
+                if (this.network) this.network.sendCommand(cmd);
+                else this.processCommand(cmd);
+                
                 audio.playClick();
                 this.drawCommandsCard(entity);
             });
