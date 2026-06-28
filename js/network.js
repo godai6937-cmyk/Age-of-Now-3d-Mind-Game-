@@ -36,7 +36,12 @@ export class NetworkController {
                 ]
             }
         };
-        this.peer = new Peer(peerConfig);
+        let savedPeerId = sessionStorage.getItem('ageOfNow_peerId');
+        if (!savedPeerId) {
+            savedPeerId = 'peer_' + Math.random().toString(36).substr(2, 9);
+            sessionStorage.setItem('ageOfNow_peerId', savedPeerId);
+        }
+        this.peer = new Peer(savedPeerId, peerConfig);
         this.peer.on('disconnected', () => {
             console.log('Host disconnected from PeerServer. Reconnecting...');
             this.peer.reconnect();
@@ -57,18 +62,30 @@ export class NetworkController {
         });
 
         this.peer.on('connection', (conn) => {
-            if (this.availableSlots.length === 0) {
-                conn.send({ type: 'ERROR', message: 'Game is full.' });
-                setTimeout(() => conn.close(), 500);
-                return;
+            let slot = null;
+            // Check if this peerId already has a reserved slot (Reconnection)
+            for (let key in this.lobbyState) {
+                if (this.lobbyState[key].peerId === conn.peer) {
+                    slot = this.lobbyState[key];
+                    break;
+                }
             }
 
-            const slot = this.availableSlots.shift();
-            this.clientFactions.set(conn.peer, slot);
+            if (!slot) {
+                if (this.availableSlots.length === 0) {
+                    conn.send({ type: 'ERROR', message: 'Game is full.' });
+                    setTimeout(() => conn.close(), 500);
+                    return;
+                }
+                const slotData = this.availableSlots.shift();
+                slot = this.lobbyState[slotData.id];
+            }
+
+            this.clientFactions.set(conn.peer, { id: slot.id, faction: slot.faction });
             this.clientConnections.push(conn);
             
-            this.lobbyState[slot.id].type = 'player';
-            this.lobbyState[slot.id].peerId = conn.peer;
+            slot.type = 'player';
+            slot.peerId = conn.peer;
             this.broadcastLobbyState();
 
             conn.on('open', () => {
@@ -102,11 +119,18 @@ export class NetworkController {
                 this.clientConnections = this.clientConnections.filter(c => c !== conn);
                 const s = this.clientFactions.get(conn.peer);
                 if (s) {
-                    this.availableSlots.push(s);
-                    this.availableSlots.sort((a, b) => a.id - b.id);
-                    this.clientFactions.delete(conn.peer);
-                    this.lobbyState[s.id].type = 'empty';
-                    this.broadcastLobbyState();
+                    if (!this.game.gameStarted) {
+                        this.availableSlots.push(s);
+                        this.availableSlots.sort((a, b) => a.id - b.id);
+                        this.clientFactions.delete(conn.peer);
+                        this.lobbyState[s.id].type = 'empty';
+                        this.lobbyState[s.id].peerId = null;
+                        this.broadcastLobbyState();
+                    } else {
+                        // Game started, keep slot reserved for reconnection
+                        this.lobbyState[s.id].type = 'disconnected';
+                        this.broadcastLobbyState();
+                    }
                 }
             });
         });
@@ -178,7 +202,7 @@ export class NetworkController {
         }
     }
 
-    initClient(hostId, onInit, onError) {
+    initClient(hostId, onInit, onError, onHostConnected) {
         this.isClient = true;
         
         const peerConfig = {
@@ -190,7 +214,12 @@ export class NetworkController {
                 ]
             }
         };
-        this.peer = new Peer(peerConfig);
+        let savedPeerId = sessionStorage.getItem('ageOfNow_peerId');
+        if (!savedPeerId) {
+            savedPeerId = 'peer_' + Math.random().toString(36).substr(2, 9);
+            sessionStorage.setItem('ageOfNow_peerId', savedPeerId);
+        }
+        this.peer = new Peer(savedPeerId, peerConfig);
         
         this.peer.on('disconnected', () => {
             console.log('Client disconnected from PeerServer. Reconnecting...');
@@ -203,6 +232,7 @@ export class NetworkController {
 
             this.hostConnection.on('open', () => {
                 console.log("Connected to host.");
+                if (onHostConnected) onHostConnected();
             });
 
             this.hostConnection.on('data', (data) => {
@@ -429,15 +459,21 @@ export class NetworkController {
     
     updateMicUI() {
         const btn = document.getElementById('btn-toggle-mic');
-        if (btn) {
+        const lobbyBtn = document.getElementById('btn-lobby-mic');
+        
+        const updateBtn = (b) => {
+            if (!b) return;
             if (this.isMicMuted) {
-                btn.textContent = '🔇';
-                btn.style.background = 'rgba(239, 68, 68, 0.8)';
+                b.textContent = '🔇';
+                b.style.background = 'rgba(239, 68, 68, 0.8)';
             } else {
-                btn.textContent = '🎤';
-                btn.style.background = 'rgba(16, 185, 129, 0.8)';
+                b.textContent = '🎤';
+                b.style.background = 'rgba(16, 185, 129, 0.8)';
             }
-        }
+        };
+        
+        updateBtn(btn);
+        updateBtn(lobbyBtn);
     }
 
     callPeers() {

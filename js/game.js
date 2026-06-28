@@ -251,13 +251,16 @@ class GameController {
             document.getElementById('connection-status').classList.remove('hidden');
             
             const onInit = () => {
-                // Connected successfully
                 document.getElementById('connection-status').classList.add('hidden');
                 
                 // Show Client UI
                 document.getElementById('lobby-invite-link').value = window.location.href;
                 document.getElementById('btn-lobby-start').style.display = 'none';
-                document.getElementById('lobby-waiting-msg').classList.remove('hidden');
+                
+                const waitMsg = document.getElementById('lobby-waiting-msg');
+                waitMsg.textContent = "Connecting to host...";
+                waitMsg.classList.remove('hidden');
+                
                 Array.from(document.querySelectorAll('.host-only')).forEach(el => el.style.display = 'none');
                 
                 // Hide the join input section
@@ -273,17 +276,22 @@ class GameController {
                     displayMsg = "Waiting for host to return... (Host might be in another app)";
                     setTimeout(() => {
                         if (!document.getElementById('connection-status').classList.contains('hidden')) {
-                            this.network.initClient(joinId, onInit, onError);
+                            this.network.initClient(joinId, onInit, onError, onHostConnected);
                         }
                     }, 3000);
                 } else if (errorMsg && errorMsg.type) {
-                    displayMsg = errorMsg.type;
+                    displayMsg = errorMsg.message || "Connection failed.";
                 }
                 document.getElementById('connection-status').textContent = displayMsg;
-                document.getElementById('connection-status').style.color = "#f59e0b";
+                document.getElementById('connection-status').style.color = "#ef4444";
+            };
+            
+            const onHostConnected = () => {
+                const waitMsg = document.getElementById('lobby-waiting-msg');
+                waitMsg.textContent = "You joined succesfully game let host starts the game ok";
             };
 
-            this.network.initClient(joinId, onInit, onError);
+            this.network.initClient(joinId, onInit, onError, onHostConnected);
         }
     }
 
@@ -409,6 +417,12 @@ class GameController {
         const micBtn = document.getElementById('btn-toggle-mic');
         if (micBtn) {
             micBtn.classList.remove('hidden');
+            micBtn.addEventListener('click', () => {
+                if (this.network) {
+                    this.network.toggleMic();
+                    audio.playClick();
+                }
+            });
         }
     }
 
@@ -739,7 +753,6 @@ class GameController {
         });
 
         // Check for ?join= code on page load
-        // Check for ?join= code on page load
         const urlParams = new URLSearchParams(window.location.search);
         const joinCode = urlParams.get('join') || urlParams.get('room');
         if (joinCode) {
@@ -792,12 +805,11 @@ class GameController {
             audio.playClick();
         });
 
-        const micBtn = document.getElementById('btn-toggle-mic');
-        if (micBtn) {
-            micBtn.addEventListener('click', () => {
+        const btnLobbyMic = document.getElementById('btn-lobby-mic');
+        if (btnLobbyMic) {
+            btnLobbyMic.addEventListener('click', () => {
                 if (this.network) {
                     this.network.toggleMic();
-                    audio.playClick();
                 }
             });
         }
@@ -1198,7 +1210,9 @@ class GameController {
                 const bottomBar = document.getElementById('bottom-bar');
                 const isMobileUI = window.innerWidth <= 950 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
                 if (isMobileUI) {
-                    if (bottomBar) bottomBar.style.display = 'none';
+                    if (bottomBar) bottomBar.style.display = 'grid';
+                    document.getElementById('info-panel').style.display = 'none';
+                    document.getElementById('command-panel').style.display = 'none';
                 } else {
                     document.getElementById('info-panel').style.visibility = 'hidden';
                     document.getElementById('command-panel').style.visibility = 'hidden';
@@ -1777,7 +1791,9 @@ class GameController {
             this.drawCommandsCard(null);
             
             if (isMobileUI) {
-                if (bottomBar) bottomBar.style.display = 'none';
+                if (bottomBar) bottomBar.style.display = 'grid';
+                document.getElementById('info-panel').style.display = 'none';
+                document.getElementById('command-panel').style.display = 'none';
             } else {
                 if (bottomBar) bottomBar.style.display = 'grid';
                 if (this.mobileHUDTimer <= 0) {
@@ -1794,6 +1810,8 @@ class GameController {
             }
         } else if (this.selectedEntities.length === 1) {
             if (bottomBar) bottomBar.style.display = 'grid';
+            document.getElementById('info-panel').style.display = '';
+            document.getElementById('command-panel').style.display = '';
             document.getElementById('info-panel').style.visibility = 'visible';
             document.getElementById('command-panel').style.visibility = 'visible';
             document.getElementById('info-panel').style.pointerEvents = 'auto';
@@ -1882,6 +1900,8 @@ class GameController {
         } else {
             const bottomBar = document.getElementById('bottom-bar');
             if (bottomBar) bottomBar.style.display = 'grid';
+            document.getElementById('info-panel').style.display = '';
+            document.getElementById('command-panel').style.display = '';
             document.getElementById('info-panel').style.visibility = 'visible';
             document.getElementById('command-panel').style.visibility = 'visible';
             document.getElementById('info-panel').style.pointerEvents = 'auto';
