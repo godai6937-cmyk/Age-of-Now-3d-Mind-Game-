@@ -45,39 +45,39 @@ const texWheat = loadRepeatedTexture('assets/textures/wheat_straw.png', 4, 4);
 const texWater = loadRepeatedTexture('assets/textures/water.png', 4, 4);
 
 export const materials = {
-    player: new THREE.MeshStandardMaterial({ color: 0x2563EB, roughness: 0.35, metalness: 0.1 }),
-    enemy: new THREE.MeshStandardMaterial({ color: 0xDC2626, roughness: 0.35, metalness: 0.1 }),
-    player3: new THREE.MeshStandardMaterial({ color: 0x10B981, roughness: 0.35, metalness: 0.1 }),
-    player4: new THREE.MeshStandardMaterial({ color: 0xF59E0B, roughness: 0.35, metalness: 0.1 }),
-    playerDark: new THREE.MeshStandardMaterial({ color: 0x1E40AF, roughness: 0.4 }),
-    enemyDark: new THREE.MeshStandardMaterial({ color: 0x991B1B, roughness: 0.4 }),
-    player3Dark: new THREE.MeshStandardMaterial({ color: 0x047857, roughness: 0.4 }),
-    player4Dark: new THREE.MeshStandardMaterial({ color: 0xB45309, roughness: 0.4 }),
-    skin: new THREE.MeshStandardMaterial({ color: 0xE8B88A, roughness: 0.7 }),
-    skinDark: new THREE.MeshStandardMaterial({ color: 0xD49B6A, roughness: 0.7 }),
-    hair: new THREE.MeshStandardMaterial({ color: 0x3B2507, roughness: 0.9 }),
-    cloth: new THREE.MeshStandardMaterial({ map: texCloth, color: 0x8C6A4A, roughness: 0.88 }),
-    leather: new THREE.MeshStandardMaterial({ map: texLeather, color: 0x6B4428, roughness: 0.82 }),
-    pants: new THREE.MeshStandardMaterial({ map: texPants, color: 0x5A4A44, roughness: 0.88 }),
-    chainmail: new THREE.MeshStandardMaterial({ map: texChainmail, color: 0xA0A6B0, metalness: 0.72, roughness: 0.32 }),
-    wood: new THREE.MeshStandardMaterial({ map: texWood, color: 0x8B5E3C, roughness: 0.88 }),
-    woodLight: new THREE.MeshStandardMaterial({ map: texWood, color: 0xAA7E5C, roughness: 0.85 }),
-    bark: new THREE.MeshStandardMaterial({ map: texBark, color: 0x8B6038, roughness: 0.92 }),
-    leaves: new THREE.MeshStandardMaterial({ map: texLeaves, color: 0x258C46, roughness: 0.8 }),
-    leavesDark: new THREE.MeshStandardMaterial({ map: texLeaves, color: 0x1B6D34, roughness: 0.82 }),
-    leavesLight: new THREE.MeshStandardMaterial({ map: texLeaves, color: 0x49A85A, roughness: 0.76 }),
-    gold: new THREE.MeshStandardMaterial({ color: 0xFFBF00, metalness: 0.85, roughness: 0.15 }),
-    stone: new THREE.MeshStandardMaterial({ map: texWall, color: 0xF0E7D7, roughness: 0.9 }),
-    stoneDark: new THREE.MeshStandardMaterial({ map: texDarkStone, color: 0xC2CBD5, roughness: 0.94 }),
-    dirt: new THREE.MeshStandardMaterial({ map: texDirt, color: 0x8C6B47, roughness: 0.97 }),
-    wheat: new THREE.MeshStandardMaterial({ map: texWheat, color: 0xD7B450, roughness: 0.88 }),
-    roof: new THREE.MeshStandardMaterial({ map: texRoof, color: 0xE1E8F0, roughness: 0.52, metalness: 0.08 }),
-    roofDark: new THREE.MeshStandardMaterial({ map: texRoof, color: 0xA8B5C7, roughness: 0.62 }),
-    wall: new THREE.MeshStandardMaterial({ map: texWall, color: 0xF4E9D3, roughness: 0.95 }),
-    wallDark: new THREE.MeshStandardMaterial({ map: texDarkStone, color: 0xB5BCC8, roughness: 0.96 }),
-    metal: new THREE.MeshStandardMaterial({ color: 0xA8A8A8, metalness: 0.75, roughness: 0.25 }),
-    metalBright: new THREE.MeshStandardMaterial({ color: 0xD4D4D4, metalness: 0.8, roughness: 0.2 }),
-    water: new THREE.MeshStandardMaterial({ map: texWater, color: 0x6BC3EB, opacity: 0.78, transparent: true, roughness: 0.06 }),
+    player: new THREE.MeshLambertMaterial({ color: 0x2563EB, roughness: 0.35, metalness: 0.1 }),
+    enemy: new THREE.MeshLambertMaterial({ color: 0xDC2626, roughness: 0.35, metalness: 0.1 }),
+    player3: new THREE.MeshLambertMaterial({ color: 0x10B981, roughness: 0.35, metalness: 0.1 }),
+    player4: new THREE.MeshLambertMaterial({ color: 0xF59E0B, roughness: 0.35, metalness: 0.1 }),
+    playerDark: new THREE.MeshLambertMaterial({ color: 0x1E40AF, roughness: 0.4 }),
+    enemyDark: new THREE.MeshLambertMaterial({ color: 0x991B1B, roughness: 0.4 }),
+    player3Dark: new THREE.MeshLambertMaterial({ color: 0x047857, roughness: 0.4 }),
+    player4Dark: new THREE.MeshLambertMaterial({ color: 0xB45309, roughness: 0.4 }),
+    skin: new THREE.MeshLambertMaterial({ color: 0xE8B88A, roughness: 0.7 }),
+    skinDark: new THREE.MeshLambertMaterial({ color: 0xD49B6A, roughness: 0.7 }),
+    hair: new THREE.MeshLambertMaterial({ color: 0x3B2507, roughness: 0.9 }),
+    cloth: new THREE.MeshLambertMaterial({ map: texCloth, color: 0x8C6A4A, roughness: 0.88 }),
+    leather: new THREE.MeshLambertMaterial({ map: texLeather, color: 0x6B4428, roughness: 0.82 }),
+    pants: new THREE.MeshLambertMaterial({ map: texPants, color: 0x5A4A44, roughness: 0.88 }),
+    chainmail: new THREE.MeshLambertMaterial({ map: texChainmail, color: 0xA0A6B0, metalness: 0.72, roughness: 0.32 }),
+    wood: new THREE.MeshLambertMaterial({ map: texWood, color: 0x8B5E3C, roughness: 0.88 }),
+    woodLight: new THREE.MeshLambertMaterial({ map: texWood, color: 0xAA7E5C, roughness: 0.85 }),
+    bark: new THREE.MeshLambertMaterial({ map: texBark, color: 0x8B6038, roughness: 0.92 }),
+    leaves: new THREE.MeshLambertMaterial({ map: texLeaves, color: 0x258C46, roughness: 0.8 }),
+    leavesDark: new THREE.MeshLambertMaterial({ map: texLeaves, color: 0x1B6D34, roughness: 0.82 }),
+    leavesLight: new THREE.MeshLambertMaterial({ map: texLeaves, color: 0x49A85A, roughness: 0.76 }),
+    gold: new THREE.MeshLambertMaterial({ color: 0xFFBF00, metalness: 0.85, roughness: 0.15 }),
+    stone: new THREE.MeshLambertMaterial({ map: texWall, color: 0xF0E7D7, roughness: 0.9 }),
+    stoneDark: new THREE.MeshLambertMaterial({ map: texDarkStone, color: 0xC2CBD5, roughness: 0.94 }),
+    dirt: new THREE.MeshLambertMaterial({ map: texDirt, color: 0x8C6B47, roughness: 0.97 }),
+    wheat: new THREE.MeshLambertMaterial({ map: texWheat, color: 0xD7B450, roughness: 0.88 }),
+    roof: new THREE.MeshLambertMaterial({ map: texRoof, color: 0xE1E8F0, roughness: 0.52, metalness: 0.08 }),
+    roofDark: new THREE.MeshLambertMaterial({ map: texRoof, color: 0xA8B5C7, roughness: 0.62 }),
+    wall: new THREE.MeshLambertMaterial({ map: texWall, color: 0xF4E9D3, roughness: 0.95 }),
+    wallDark: new THREE.MeshLambertMaterial({ map: texDarkStone, color: 0xB5BCC8, roughness: 0.96 }),
+    metal: new THREE.MeshLambertMaterial({ color: 0xA8A8A8, metalness: 0.75, roughness: 0.25 }),
+    metalBright: new THREE.MeshLambertMaterial({ color: 0xD4D4D4, metalness: 0.8, roughness: 0.2 }),
+    water: new THREE.MeshLambertMaterial({ map: texWater, color: 0x6BC3EB, opacity: 0.78, transparent: true, roughness: 0.06 }),
     torch: new THREE.MeshBasicMaterial({ color: 0xFF8C00 }),
     window: new THREE.MeshBasicMaterial({ color: 0xFFF3B0, transparent: true, opacity: 0.6 }),
 };
@@ -103,17 +103,17 @@ export const meshBuilders = {
         const group = new THREE.Group();
         const bodyGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.5, 8);
         bodyGeo.rotateX(Math.PI / 2);
-        const bodyMat = new THREE.MeshStandardMaterial({ color: 0xaaaaaa });
+        const bodyMat = new THREE.MeshLambertMaterial({ color: 0xaaaaaa });
         const body = new THREE.Mesh(bodyGeo, bodyMat);
         
         const tipGeo = new THREE.ConeGeometry(0.04, 0.15, 8);
         tipGeo.rotateX(Math.PI / 2);
-        const tipMat = new THREE.MeshStandardMaterial({ color: 0xcc2222 });
+        const tipMat = new THREE.MeshLambertMaterial({ color: 0xcc2222 });
         const tip = new THREE.Mesh(tipGeo, tipMat);
         tip.position.z = 0.3;
 
         const finGeo = new THREE.BoxGeometry(0.15, 0.15, 0.05);
-        const finMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
+        const finMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
         const fin1 = new THREE.Mesh(finGeo, finMat);
         fin1.position.z = -0.2;
         const fin2 = new THREE.Mesh(finGeo, finMat);
@@ -1080,8 +1080,8 @@ export const meshBuilders = {
     createStoneNode() {
         const group = new THREE.Group();
 
-        const stoneMatDark = new THREE.MeshStandardMaterial({ color: 0x6B7280, roughness: 0.95, metalness: 0.05, flatShading: true });
-        const stoneMatLight = new THREE.MeshStandardMaterial({ color: 0x9CA3AF, roughness: 0.9, metalness: 0.05, flatShading: true });
+        const stoneMatDark = new THREE.MeshLambertMaterial({ color: 0x6B7280, roughness: 0.95, metalness: 0.05, flatShading: true });
+        const stoneMatLight = new THREE.MeshLambertMaterial({ color: 0x9CA3AF, roughness: 0.9, metalness: 0.05, flatShading: true });
 
         const baseGeo = new THREE.DodecahedronGeometry(0.8);
         const base = new THREE.Mesh(baseGeo, stoneMatDark);
@@ -1127,7 +1127,7 @@ export const meshBuilders = {
         // Add fishes
         const fishGeo = new THREE.ConeGeometry(0.08, 0.25, 4);
         fishGeo.rotateX(Math.PI / 2);
-        const fishMat = new THREE.MeshStandardMaterial({color: 0x3b82f6});
+        const fishMat = new THREE.MeshLambertMaterial({color: 0x3b82f6});
         for (let i = 0; i < 5; i++) {
             const fish = new THREE.Mesh(fishGeo, fishMat);
             fish.position.set((Math.random() - 0.5) * 1.5, -0.05, (Math.random() - 0.5) * 1.5);
@@ -1159,7 +1159,7 @@ export const meshBuilders = {
 
         // Berries
         const berryGeo = new THREE.SphereGeometry(0.05, 4, 4);
-        const berryMat = new THREE.MeshStandardMaterial({ color: 0xDC2626, roughness: 0.25, metalness: 0.1 });
+        const berryMat = new THREE.MeshLambertMaterial({ color: 0xDC2626, roughness: 0.25, metalness: 0.1 });
         const berryPositions = [
             [0.2, 0.5, 0.35], [-0.25, 0.55, 0.15], [0.35, 0.4, -0.15],
             [-0.1, 0.45, -0.35], [0, 0.6, 0.1], [-0.35, 0.3, 0.05],
@@ -1339,7 +1339,7 @@ export const meshBuilders = {
         // Goods (colored boxes)
         const goods = [0xf59e0b, 0xef4444, 0x10b981];
         goods.forEach((c, i) => {
-            const g = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), new THREE.MeshStandardMaterial({color: c, roughness: 0.6}));
+            const g = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), new THREE.MeshLambertMaterial({color: c, roughness: 0.6}));
             g.position.set(-0.6 + i * 0.6, 0.75, 0.7); group.add(g);
         });
         return group;
@@ -1469,7 +1469,7 @@ export const meshBuilders = {
         const dome = new THREE.Mesh(new THREE.SphereGeometry(0.8, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), mat);
         dome.position.set(0, 2.0, -0.3); group.add(dome);
         // Book/scroll (decoration)
-        const book = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.1, 0.2), new THREE.MeshStandardMaterial({color: 0x8B4513, roughness: 0.8}));
+        const book = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.1, 0.2), new THREE.MeshLambertMaterial({color: 0x8B4513, roughness: 0.8}));
         book.position.set(0, 0.1, 1.5); group.add(book);
         return group;
     },
@@ -1654,7 +1654,7 @@ export const meshBuilders = {
 
         // Hanging fish decorations
         for (let i = -0.4; i <= 0.4; i += 0.4) {
-            const fish = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.2, 4), new THREE.MeshStandardMaterial({color: 0x88ccff}));
+            const fish = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.2, 4), new THREE.MeshLambertMaterial({color: 0x88ccff}));
             fish.position.set(i, 0.8, 0.1);
             fish.rotation.z = Math.PI / 8;
             group.add(fish);
@@ -1668,17 +1668,17 @@ export const meshBuilders = {
         const group = new THREE.Group();
         const mat = getFactionMat(faction, false);
         // Horse body
-        const body = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.4, 1.0), new THREE.MeshStandardMaterial({color: 0x8B4513, roughness: 0.7}));
+        const body = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.4, 1.0), new THREE.MeshLambertMaterial({color: 0x8B4513, roughness: 0.7}));
         body.position.set(0, 0.5, 0); body.castShadow = true; group.add(body);
         // Horse legs
         for (let x = -0.15; x <= 0.15; x += 0.3) {
             for (let z = -0.3; z <= 0.3; z += 0.6) {
-                const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.4, 4), new THREE.MeshStandardMaterial({color: 0x6B3410, roughness: 0.7}));
+                const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.4, 4), new THREE.MeshLambertMaterial({color: 0x6B3410, roughness: 0.7}));
                 leg.position.set(x, 0.2, z); group.add(leg);
             }
         }
         // Horse head
-        const head = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.25, 0.3), new THREE.MeshStandardMaterial({color: 0x8B4513, roughness: 0.7}));
+        const head = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.25, 0.3), new THREE.MeshLambertMaterial({color: 0x8B4513, roughness: 0.7}));
         head.position.set(0, 0.7, 0.55); head.rotation.x = -0.3; group.add(head);
         // Rider torso
         const torso = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.3, 0.16), materials.chainmail);
@@ -1755,16 +1755,16 @@ export const meshBuilders = {
         const group = new THREE.Group();
         const mat = getFactionMat(faction, false);
         // Robe (long cone)
-        const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.2, 0.7, 8), new THREE.MeshStandardMaterial({color: 0xF5DEB3, roughness: 0.9}));
+        const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.2, 0.7, 8), new THREE.MeshLambertMaterial({color: 0xF5DEB3, roughness: 0.9}));
         robe.position.y = 0.35; robe.castShadow = true; group.add(robe);
         // Torso
-        const torso = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.25, 0.14), new THREE.MeshStandardMaterial({color: 0xDEB887, roughness: 0.85}));
+        const torso = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.25, 0.14), new THREE.MeshLambertMaterial({color: 0xDEB887, roughness: 0.85}));
         torso.position.y = 0.82; group.add(torso);
         // Head
         const head = new THREE.Mesh(new THREE.SphereGeometry(0.1, 6, 6), materials.skin);
         head.position.y = 1.02; group.add(head);
         // Hood
-        const hood = new THREE.Mesh(new THREE.SphereGeometry(0.12, 6, 4, 0, Math.PI * 2, 0, Math.PI / 1.5), new THREE.MeshStandardMaterial({color: 0xDEB887, roughness: 0.85}));
+        const hood = new THREE.Mesh(new THREE.SphereGeometry(0.12, 6, 4, 0, Math.PI * 2, 0, Math.PI / 1.5), new THREE.MeshLambertMaterial({color: 0xDEB887, roughness: 0.85}));
         hood.position.y = 1.04; group.add(hood);
         // Staff
         const staff = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.2, 4), materials.wood);
@@ -1784,7 +1784,7 @@ export const meshBuilders = {
         const armor = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.15, 0.9), materials.metalBright);
         armor.position.set(0, 0.75, 0); group.add(armor);
         // Add plume to helmet
-        const plume = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.2, 0.3), new THREE.MeshStandardMaterial({color: 0xDC143C, roughness: 0.5}));
+        const plume = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.2, 0.3), new THREE.MeshLambertMaterial({color: 0xDC143C, roughness: 0.5}));
         plume.position.set(0, 1.35, -0.05); group.add(plume);
         return group;
     },
@@ -1877,13 +1877,13 @@ export const meshBuilders = {
         const group = new THREE.Group();
         const mat = getFactionMat(faction, false);
         // Elephant body (large)
-        const body = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.7, 1.4), new THREE.MeshStandardMaterial({color: 0x808080, roughness: 0.8}));
+        const body = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.7, 1.4), new THREE.MeshLambertMaterial({color: 0x808080, roughness: 0.8}));
         body.position.set(0, 0.8, 0); body.castShadow = true; group.add(body);
         // Legs (4 thick pillars)
         let legIndex = 0;
         for (let x = -0.3; x <= 0.3; x += 0.6) {
             for (let z = -0.4; z <= 0.4; z += 0.8) {
-                const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.13, 0.7, 6), new THREE.MeshStandardMaterial({color: 0x707070, roughness: 0.8}));
+                const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.13, 0.7, 6), new THREE.MeshLambertMaterial({color: 0x707070, roughness: 0.8}));
                 leg.position.set(x, 0.35, z); 
                 leg.name = legIndex % 2 === 0 ? 'leftLeg' : 'rightLeg';
                 group.add(leg);
@@ -1891,14 +1891,14 @@ export const meshBuilders = {
             }
         }
         // Head
-        const head = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 8), new THREE.MeshStandardMaterial({color: 0x808080, roughness: 0.8}));
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 8), new THREE.MeshLambertMaterial({color: 0x808080, roughness: 0.8}));
         head.position.set(0, 1.0, 0.8); group.add(head);
         // Trunk
-        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.04, 0.6, 6), new THREE.MeshStandardMaterial({color: 0x808080, roughness: 0.8}));
+        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.04, 0.6, 6), new THREE.MeshLambertMaterial({color: 0x808080, roughness: 0.8}));
         trunk.position.set(0, 0.7, 1.15); trunk.rotation.x = 0.5; group.add(trunk);
         // Tusks
         for (let x = -0.12; x <= 0.12; x += 0.24) {
-            const tusk = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.01, 0.4, 4), new THREE.MeshStandardMaterial({color: 0xFFFDD0, roughness: 0.3}));
+            const tusk = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.01, 0.4, 4), new THREE.MeshLambertMaterial({color: 0xFFFDD0, roughness: 0.3}));
             tusk.position.set(x, 0.85, 1.0); tusk.rotation.x = 0.6; group.add(tusk);
         }
         // Howdah (riding platform)
@@ -1911,7 +1911,7 @@ export const meshBuilders = {
         rHead.position.set(0, 1.72, 0); group.add(rHead);
         // Ears
         for (let x = -0.25; x <= 0.25; x += 0.5) {
-            const ear = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.2, 0.04), new THREE.MeshStandardMaterial({color: 0x808080, roughness: 0.8}));
+            const ear = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.2, 0.04), new THREE.MeshLambertMaterial({color: 0x808080, roughness: 0.8}));
             ear.position.set(x, 1.0, 0.65); group.add(ear);
         }
         return group;
@@ -2009,7 +2009,7 @@ export const meshBuilders = {
         const body = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.5, 1.2), materials.metalDark);
         body.position.set(0, 0.3, 0); body.castShadow = true; group.add(body);
         // Cockpit glass
-        const glassMat = new THREE.MeshStandardMaterial({ color: 0x88ccff, transparent: true, opacity: 0.7, roughness: 0.1, metalness: 0.8 });
+        const glassMat = new THREE.MeshLambertMaterial({ color: 0x88ccff, transparent: true, opacity: 0.7, roughness: 0.1, metalness: 0.8 });
         const glass = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.3, 0.4), glassMat);
         glass.position.set(0, 0.35, 0.5); group.add(glass);
         // Tail
@@ -2051,7 +2051,7 @@ export const meshBuilders = {
 
         // Cockpit
         const glassGeo = new THREE.SphereGeometry(0.2, 8, 8);
-        const glassMat = new THREE.MeshStandardMaterial({ color: 0x111111, transparent: true, opacity: 0.7, roughness: 0.1, metalness: 0.8 });
+        const glassMat = new THREE.MeshLambertMaterial({ color: 0x111111, transparent: true, opacity: 0.7, roughness: 0.1, metalness: 0.8 });
         const glass = new THREE.Mesh(glassGeo, glassMat);
         glass.scale.set(0.8, 1.2, 2.2);
         glass.position.set(0, 0.25, 0.4); group.add(glass);
