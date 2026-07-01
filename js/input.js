@@ -231,7 +231,9 @@ export class InputController {
             e.preventDefault();
             if (e.target.closest('#hud') || e.target.closest('.overlay-screen')) return;
             
-            if (!this.placingType) {
+            if (this.placingType) {
+                this.cancelBuildingPlacement();
+            } else {
                 this.handleRightClickOrder();
             }
         });
@@ -899,7 +901,7 @@ export class InputController {
                 if (villagers.length > 0) this.sendCommand({ type: 'BUILD', faction: this.game.localFaction, targetId: target.id, unitIds: villagers.map(u=>u.id) });
                 if (others.length > 0) this.sendCommand({ type: 'MOVE', faction: this.game.localFaction, x: target.position.x, z: target.position.z, unitIds: others.map(u=>u.id) });
                 cmdSent = true;
-            } else if (target.health < target.maxHealth && villagers.length > 0) {
+            } else if (target.isCompleted && target.type !== 'farm' && villagers.length > 0) {
                 this.sendCommand({ type: 'REPAIR', faction: this.game.localFaction, targetId: target.id, unitIds: villagers.map(u=>u.id) });
                 if (others.length > 0) this.sendCommand({ type: 'MOVE', faction: this.game.localFaction, x: target.position.x, z: target.position.z, unitIds: others.map(u=>u.id) });
                 cmdSent = true;

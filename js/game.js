@@ -1,7 +1,7 @@
 // Main Game Controller Module
-import { meshBuilders, Unit, Villager, Soldier, Archer, Knight, Spearman, Crossbowman, SiegeRam, Monk, Paladin, Cannon, EliteArcher, Titan, WarElephant, Champion, FighterRobot, Helicopter, FighterPlane, FishBoat, WarShip, TransportBoat, Building, Tower, Projectile, Animal } from './entities.js?v=63';
-import { WorldMap, NaturalResource } from './world.js?v=63';
-import { InputController } from './input.js?v=63';
+import { meshBuilders, Unit, Villager, Soldier, Archer, Knight, Spearman, Crossbowman, SiegeRam, Monk, Paladin, Cannon, EliteArcher, Titan, WarElephant, Champion, FighterRobot, Helicopter, FighterPlane, FishBoat, WarShip, TransportBoat, Building, Tower, Projectile, Animal } from './entities.js?v=65';
+import { WorldMap, NaturalResource } from './world.js?v=65';
+import { InputController } from './input.js?v=65';
 import { EnemyAI } from './ai.js?v=14';
 import { audio } from './audio.js?v=33';
 import { VFXSystem } from './vfx.js?v=14';
@@ -167,6 +167,9 @@ class GameController {
             // Lighting
             const ambientLight = new THREE.AmbientLight(0xf4f8ff, 0.48);
             this.scene.add(ambientLight);
+
+            const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+            this.scene.add(hemisphereLight);
 
             const sunLight = new THREE.DirectionalLight(0xfff5de, 1.26);
             sunLight.position.set(-34, 52, -18);
@@ -2365,11 +2368,11 @@ class GameController {
         if (!this.scene) return;
         // Sky, fog, and lighting adjustments per age
         const themes = {
-            1: { sky: 0x87CEEB, fog: 0xc8d6e5, fogNear: 50, fogFar: 120, ambientColor: 0x606080, ambientIntensity: 0.5, dirColor: 0xffffff, dirIntensity: 0.8 },
-            2: { sky: 0x6CA6CD, fog: 0xb0c4de, fogNear: 55, fogFar: 130, ambientColor: 0x707090, ambientIntensity: 0.55, dirColor: 0xffe8c0, dirIntensity: 0.85 },
-            3: { sky: 0x4B6587, fog: 0x8899aa, fogNear: 45, fogFar: 115, ambientColor: 0x505070, ambientIntensity: 0.45, dirColor: 0xddc8a0, dirIntensity: 0.9 },
-            4: { sky: 0x2C3E50, fog: 0x5a6a7a, fogNear: 40, fogFar: 110, ambientColor: 0x404060, ambientIntensity: 0.4, dirColor: 0xffd700, dirIntensity: 1.0 },
-            5: { sky: 0x1a0a2e, fog: 0x2d1b4e, fogNear: 35, fogFar: 100, ambientColor: 0x3a1a5e, ambientIntensity: 0.35, dirColor: 0xff88cc, dirIntensity: 1.2 }
+            1: { sky: 0x87CEEB, fog: 0xc8d6e5, fogNear: 50, fogFar: 120, ambientColor: 0x606080, ambientIntensity: 0.5, dirColor: 0xffffff, dirIntensity: 0.8, hemiSky: 0xffffff, hemiGround: 0x444444, hemiIntensity: 0.6 },
+            2: { sky: 0x6CA6CD, fog: 0xb0c4de, fogNear: 55, fogFar: 130, ambientColor: 0x707090, ambientIntensity: 0.55, dirColor: 0xffe8c0, dirIntensity: 0.85, hemiSky: 0xe0f2ff, hemiGround: 0x4a4a4a, hemiIntensity: 0.65 },
+            3: { sky: 0x4B6587, fog: 0x8899aa, fogNear: 45, fogFar: 115, ambientColor: 0x505070, ambientIntensity: 0.45, dirColor: 0xddc8a0, dirIntensity: 0.9, hemiSky: 0xcce0ff, hemiGround: 0x555555, hemiIntensity: 0.7 },
+            4: { sky: 0x2C3E50, fog: 0x5a6a7a, fogNear: 40, fogFar: 110, ambientColor: 0x404060, ambientIntensity: 0.4, dirColor: 0xffd700, dirIntensity: 1.0, hemiSky: 0xb3d1ff, hemiGround: 0x666666, hemiIntensity: 0.75 },
+            5: { sky: 0x1a0a2e, fog: 0x2d1b4e, fogNear: 35, fogFar: 100, ambientColor: 0x3a1a5e, ambientIntensity: 0.35, dirColor: 0xff88cc, dirIntensity: 1.2, hemiSky: 0x2a1a4e, hemiGround: 0x1d113e, hemiIntensity: 0.8 }
         };
         const t = themes[age] || themes[1];
 
@@ -2386,6 +2389,11 @@ class GameController {
             if (child.isDirectionalLight) {
                 child.color.set(t.dirColor);
                 child.intensity = t.dirIntensity;
+            }
+            if (child.isHemisphereLight) {
+                child.color.set(t.hemiSky);
+                child.groundColor.set(t.hemiGround);
+                child.intensity = t.hemiIntensity;
             }
         });
     }

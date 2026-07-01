@@ -232,6 +232,10 @@ export class NetworkController {
 
             this.hostConnection.on('open', () => {
                 console.log("Connected to host.");
+                const lobbyControls = document.getElementById('lobby-host-controls');
+                if (lobbyControls) {
+                    lobbyControls.innerHTML = '<h3 style="color: #10b981; text-align: center;">you have joined wait host to start the game ok</h3>';
+                }
                 if (onHostConnected) onHostConnected();
             });
 

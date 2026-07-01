@@ -3676,7 +3676,7 @@ export class Villager extends Unit {
     }
 
     handleRepairState(dt, world, game) {
-        if (!this.targetEntity || this.targetEntity.dead || this.targetEntity.health >= this.targetEntity.maxHealth) { 
+        if (!this.targetEntity || this.targetEntity.dead || this.targetEntity.faction !== this.faction) { 
             this.state = 'IDLE'; 
             return; 
         }
@@ -3686,25 +3686,36 @@ export class Villager extends Unit {
             this.targetPos.copy(repairSpot);
             this.moveTowardsTarget(dt, world);
         } else {
+            if (this.targetEntity.health >= this.targetEntity.maxHealth) {
+                this.state = 'IDLE';
+                return;
+            }
+            
             const dir = this.targetEntity.position.clone().sub(this.position);
             dir.y = 0;
             if (dir.lengthSq() > 0.001) this.alignMesh(dir.normalize());
 
-            this.targetEntity.hp = Math.min(this.targetEntity.maxHp, this.targetEntity.hp + this.repairRate * dt);    
-            if (!game.factionResources) game.factionResources = {};
-            if (!game.factionResources[this.faction]) game.factionResources[this.faction] = { food: 200, wood: 200, gold: 100, stone: 0 };
+            if (this.repairTimer === undefined) this.repairTimer = 0;
+            this.repairTimer += dt;
 
-            // Repair costs 1 wood per 10 HP
-            if (game.factionResources[this.faction].wood >= 1) {
-                game.factionResources[this.faction].wood -= 1;
-                if (this.faction === game.localFaction) {
-                    game.playerResources.wood = game.factionResources[this.faction].wood;
-                    game.updateTopBar();
+            if (this.repairTimer >= 1.0) {
+                this.repairTimer -= 1.0;
+                
+                if (!game.factionResources) game.factionResources = {};
+                if (!game.factionResources[this.faction]) game.factionResources[this.faction] = { food: 200, wood: 200, gold: 100, stone: 0 };
+
+                // Repair costs 1 wood per 10 HP
+                if (game.factionResources[this.faction].wood >= 1) {
+                    game.factionResources[this.faction].wood -= 1;
+                    if (this.faction === game.localFaction) {
+                        game.playerResources.wood = game.factionResources[this.faction].wood;
+                        game.updateTopBar();
+                    }
+                    this.targetEntity.health = Math.min(this.targetEntity.maxHealth, this.targetEntity.health + 10);
+                    if (this.targetEntity.updateWorldHealthBar) this.targetEntity.updateWorldHealthBar();
+                } else {
+                    this.state = 'IDLE';
                 }
-                this.targetEntity.health = Math.min(this.targetEntity.maxHealth, this.targetEntity.health + 10);
-                this.targetEntity.updateWorldHealthBar();
-            } else {
-                this.state = 'IDLE';
             }
         }
     }
