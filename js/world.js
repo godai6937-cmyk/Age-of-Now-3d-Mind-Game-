@@ -85,8 +85,7 @@ export class WorldMap {
         this.cloudTime = 0;
         // Store elevation data for querying
         this._elevationData = null;
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 800;
-        this._elevationSegments = isMobile ? 80 : 200;
+        this._elevationSegments = 200;
 
         // Map layout parameters
         this.layout = {
@@ -465,8 +464,6 @@ export class WorldMap {
         });
 
         groundMat.onBeforeCompile = (shader) => {
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 800;
-            if (isMobile) return;
 
             shader.uniforms.dirtMap = { value: dirtTex };
             shader.uniforms.rockMap = { value: rockTex };
@@ -605,8 +602,7 @@ export class WorldMap {
 
     createWater() {
         const size = this.planeSize;
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 800;
-        const waterSegs = isMobile ? 32 : 128;
+        const waterSegs = 128;
         const waterGeo = new THREE.PlaneGeometry(size, size, waterSegs, waterSegs);
         waterGeo.rotateX(-Math.PI / 2);
 

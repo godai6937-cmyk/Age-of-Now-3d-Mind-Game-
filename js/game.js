@@ -1,7 +1,7 @@
 // Main Game Controller Module
-import { meshBuilders, Unit, Villager, Soldier, Archer, Knight, Spearman, Crossbowman, SiegeRam, Monk, Paladin, Cannon, EliteArcher, Titan, WarElephant, Champion, FighterRobot, Helicopter, FighterPlane, FishBoat, WarShip, TransportBoat, Building, Tower, Projectile, Animal } from './entities.js?v=62';
-import { WorldMap, NaturalResource } from './world.js?v=62';
-import { InputController } from './input.js?v=62';
+import { meshBuilders, Unit, Villager, Soldier, Archer, Knight, Spearman, Crossbowman, SiegeRam, Monk, Paladin, Cannon, EliteArcher, Titan, WarElephant, Champion, FighterRobot, Helicopter, FighterPlane, FishBoat, WarShip, TransportBoat, Building, Tower, Projectile, Animal } from './entities.js?v=63';
+import { WorldMap, NaturalResource } from './world.js?v=63';
+import { InputController } from './input.js?v=63';
 import { EnemyAI } from './ai.js?v=14';
 import { audio } from './audio.js?v=33';
 import { VFXSystem } from './vfx.js?v=14';
@@ -154,10 +154,10 @@ class GameController {
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 800;
 
             // Renderer
-            this.renderer = new THREE.WebGLRenderer({ antialias: !isMobile, precision: 'highp' });
+            this.renderer = new THREE.WebGLRenderer({ antialias: true, precision: 'highp' });
             this.renderer.setPixelRatio(isMobile ? Math.min(window.devicePixelRatio, 1.35) : Math.min(window.devicePixelRatio, 2));
             this.renderer.setSize(window.innerWidth, window.innerHeight);
-            this.renderer.shadowMap.enabled = !isMobile;
+            this.renderer.shadowMap.enabled = true;
             this.renderer.shadowMap.type = isMobile ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
             this.renderer.outputEncoding = THREE.sRGBEncoding;
             this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -170,7 +170,7 @@ class GameController {
 
             const sunLight = new THREE.DirectionalLight(0xfff5de, 1.26);
             sunLight.position.set(-34, 52, -18);
-            sunLight.castShadow = !isMobile;
+            sunLight.castShadow = true;
             
             // Configure high quality shadow camera
             sunLight.shadow.mapSize.width = isMobile ? 512 : 2048;
@@ -1788,12 +1788,12 @@ class GameController {
             this.drawCommandsCard(null);
             
             if (bottomBar) bottomBar.style.display = 'grid';
-            document.getElementById('info-panel').style.display = '';
-            document.getElementById('command-panel').style.display = '';
-            document.getElementById('info-panel').style.visibility = 'visible';
-            document.getElementById('command-panel').style.visibility = 'visible';
-            document.getElementById('info-panel').style.pointerEvents = 'auto';
-            document.getElementById('command-panel').style.pointerEvents = 'auto';
+            document.getElementById('info-panel').style.display = 'none';
+            document.getElementById('command-panel').style.display = 'none';
+            document.getElementById('info-panel').style.visibility = 'hidden';
+            document.getElementById('command-panel').style.visibility = 'hidden';
+            document.getElementById('info-panel').style.pointerEvents = 'none';
+            document.getElementById('command-panel').style.pointerEvents = 'none';
         } else if (this.selectedEntities.length === 1) {
             if (bottomBar) bottomBar.style.display = 'grid';
             document.getElementById('info-panel').style.display = '';
