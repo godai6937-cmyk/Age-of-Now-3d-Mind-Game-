@@ -87,6 +87,15 @@ export class NetworkController {
             slot.peerId = conn.peer;
             this.broadcastLobbyState();
 
+            // If game already started, we might have an AI running for this slot. Remove it so the human can take over.
+            if (this.game.gameStarted && this.game.aiPlayers) {
+                const aiIndex = this.game.aiPlayers.findIndex(ai => ai.faction === slot.faction);
+                if (aiIndex !== -1) {
+                    this.game.aiPlayers.splice(aiIndex, 1);
+                    console.log(`Player joined: removed AI for faction ${slot.faction}`);
+                }
+            }
+
             conn.on('open', () => {
                 console.log(`Client ${conn.peer} connected as ${slot.faction}`);
                 if (this.game.gameStarted) {
