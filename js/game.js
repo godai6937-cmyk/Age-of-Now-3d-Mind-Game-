@@ -2,7 +2,7 @@
 import { meshBuilders, Unit, Villager, Soldier, Archer, Knight, Spearman, Crossbowman, SiegeRam, Monk, Paladin, Cannon, EliteArcher, Titan, WarElephant, Champion, FighterRobot, Helicopter, FighterPlane, FishBoat, WarShip, TransportBoat, Building, Tower, Projectile, Animal } from './entities.js?v=67';
 import { WorldMap, NaturalResource } from './world.js?v=68';
 import { InputController } from './input.js?v=66';
-import { EnemyAI } from './ai.js?v=14';
+import { EnemyAI } from './ai.js?v=15';
 import { audio } from './audio.js?v=33';
 import { VFXSystem } from './vfx.js?v=14';
 import { NetworkController } from './network.js?v=4';

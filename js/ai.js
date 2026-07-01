@@ -34,6 +34,19 @@ export class EnemyAI {
     }
 
     update(dt) {
+        // Failsafe: if a real player takes over this faction, stop operating!
+        if (this.game.network && this.game.network.lobbyState) {
+            const slot = Object.values(this.game.network.lobbyState).find(s => s.faction === this.faction);
+            if (slot && slot.type === 'player') {
+                const idx = this.game.aiPlayers.indexOf(this);
+                if (idx !== -1) {
+                    this.game.aiPlayers.splice(idx, 1);
+                    console.log(`Failsafe: AI self-destructed for faction ${this.faction} because it is now a player.`);
+                }
+                return;
+            }
+        }
+
         this.thinkTimer += dt;
         this.raidTimer += dt;
         this.ageTimer += dt;
