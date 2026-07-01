@@ -416,73 +416,96 @@ export class WorldMap {
             if (gridRow >= 0 && gridRow <= segments && gridCol >= 0 && gridCol <= segments) {
                 this._elevationGrid[gridRow][gridCol] = elevation;
             }
-
-            // Add some noise to vertex colors to break up tiling
-            const nx = x + this.seedX;
-            const nz = z + this.seedZ;
-            const nSmall = fbmNoise(nx * 2.2, nz * 2.2, 3);
-            const nLarge = fbmNoise(nx * 0.35 + 50, nz * 0.35 - 20, 2);
-            const grassVar = (nSmall * 0.65 + nLarge * 0.35);
-            const slopeSample =
-                Math.abs(this.getRawElevation(x + 0.75, z) - this.getRawElevation(x - 0.75, z)) +
-                Math.abs(this.getRawElevation(x, z + 0.75) - this.getRawElevation(x, z - 0.75));
-
-            const grassA = new THREE.Color(0.12, 0.28, 0.10);
-            const grassB = new THREE.Color(0.18, 0.35, 0.14);
-            const meadow = new THREE.Color(0.25, 0.45, 0.18);
-            const dirt = new THREE.Color(0.18, 0.14, 0.08);
-            const wetSand = new THREE.Color(0.20, 0.18, 0.12);
-            const drySand = new THREE.Color(0.28, 0.24, 0.16);
-            const rock = new THREE.Color(0.15, 0.32, 0.12); // Normal grass field color
-            const snow = new THREE.Color(0.18, 0.35, 0.14); // Normal grass field color
-
-            let col = grassA.clone().lerp(grassB, grassVar);
-            const meadowW = smooth(0.25, 0.78, nSmall) * smooth(0.18, 1.35, elevation) * (1 - smooth(1.7, 3.0, elevation));
-            col.lerp(meadow, meadowW * 0.65);
-
-            const wetShoreW = 1 - smooth(0.05, 0.60, elevation);
-            const beachW = smooth(-0.35, 0.05, elevation) * (1 - smooth(0.12, 0.55, elevation));
-            col.lerp(wetSand, wetShoreW * 0.75);
-            col.lerp(drySand, beachW * 0.95);
-
-            const rockW = Math.max(smooth(0.30, 1.0, slopeSample), smooth(1.15, 2.15, elevation) * 0.55);
-            col.lerp(rock, rockW);
-
-            const snowW = smooth(2.65, 3.35, elevation);
-            col.lerp(snow, snowW);
-
-            let baseDist = Infinity;
-            if (this.game && this.game.basePositions) {
-                for (const faction in this.game.basePositions) {
-                    const pos = this.game.basePositions[faction];
-                    const d = Math.hypot(x - pos.x, z - pos.z);
-                    if (d < baseDist) baseDist = d;
-                }
-            } else {
-                const distToPlayerBase = Math.hypot(x - (-40), z - 40);
-                const distToEnemyBase = Math.hypot(x - 40, z - (-40));
-                baseDist = Math.min(distToPlayerBase, distToEnemyBase);
-            }
-            const wornGround = 1 - smooth(8, 18, baseDist);
-            // Dirt paths near bases / connecting bases
-            const pathNoise = smooth(0.55, 0.85, fbmNoise(nx * 0.9 + 200, nz * 0.9 - 80, 3));
-            col.lerp(dirt, THREE.MathUtils.clamp(wornGround * 0.85 + pathNoise * 0.10, 0, 0.9));
-
-            col.convertSRGBToLinear();
-            colors.push(
-                Math.min(255, Math.max(0, Math.floor(col.r * 255))), 
-                Math.min(255, Math.max(0, Math.floor(col.g * 255))), 
-                Math.min(255, Math.max(0, Math.floor(col.b * 255)))
-            );
         }
 
         posAttr.needsUpdate = true;
-        groundGeo.setAttribute('color', new THREE.Uint8BufferAttribute(colors, 3, true));
         groundGeo.computeVertexNormals();
 
+        // --- Generate Terrain Texture (Fix for mobile WebGL vertex colors) ---
+        const texSize = 256;
+        const canvas = document.createElement('canvas');
+        canvas.width = texSize;
+        canvas.height = texSize;
+        const ctx = canvas.getContext('2d');
+        const imgData = ctx.createImageData(texSize, texSize);
+        const data = imgData.data;
+
+        for (let py = 0; py < texSize; py++) {
+            for (let px = 0; px < texSize; px++) {
+                const x = (px / (texSize - 1)) * size - halfSize;
+                const z = (py / (texSize - 1)) * size - halfSize;
+                
+                const elevation = this.getRawElevation(x, z);
+
+                // Add some noise to colors to break up tiling
+                const nx = x + this.seedX;
+                const nz = z + this.seedZ;
+                const nSmall = fbmNoise(nx * 2.2, nz * 2.2, 3);
+                const nLarge = fbmNoise(nx * 0.35 + 50, nz * 0.35 - 20, 2);
+                const grassVar = (nSmall * 0.65 + nLarge * 0.35);
+                const slopeSample =
+                    Math.abs(this.getRawElevation(x + 0.75, z) - this.getRawElevation(x - 0.75, z)) +
+                    Math.abs(this.getRawElevation(x, z + 0.75) - this.getRawElevation(x, z - 0.75));
+
+                const grassA = new THREE.Color(0.12, 0.28, 0.10);
+                const grassB = new THREE.Color(0.18, 0.35, 0.14);
+                const meadow = new THREE.Color(0.25, 0.45, 0.18);
+                const dirt = new THREE.Color(0.18, 0.14, 0.08);
+                const wetSand = new THREE.Color(0.20, 0.18, 0.12);
+                const drySand = new THREE.Color(0.28, 0.24, 0.16);
+                const rock = new THREE.Color(0.15, 0.32, 0.12); 
+                const snow = new THREE.Color(0.18, 0.35, 0.14); 
+
+                let col = grassA.clone().lerp(grassB, grassVar);
+                const meadowW = smooth(0.25, 0.78, nSmall) * smooth(0.18, 1.35, elevation) * (1 - smooth(1.7, 3.0, elevation));
+                col.lerp(meadow, meadowW * 0.65);
+
+                const wetShoreW = 1 - smooth(0.05, 0.60, elevation);
+                const beachW = smooth(-0.35, 0.05, elevation) * (1 - smooth(0.12, 0.55, elevation));
+                col.lerp(wetSand, wetShoreW * 0.75);
+                col.lerp(drySand, beachW * 0.95);
+
+                const rockW = Math.max(smooth(0.30, 1.0, slopeSample), smooth(1.15, 2.15, elevation) * 0.55);
+                col.lerp(rock, rockW);
+
+                const snowW = smooth(2.65, 3.35, elevation);
+                col.lerp(snow, snowW);
+
+                let baseDist = Infinity;
+                if (this.game && this.game.basePositions) {
+                    for (const faction in this.game.basePositions) {
+                        const pos = this.game.basePositions[faction];
+                        const d = Math.hypot(x - pos.x, z - pos.z);
+                        if (d < baseDist) baseDist = d;
+                    }
+                } else {
+                    const distToPlayerBase = Math.hypot(x - (-40), z - 40);
+                    const distToEnemyBase = Math.hypot(x - 40, z - (-40));
+                    baseDist = Math.min(distToPlayerBase, distToEnemyBase);
+                }
+                const wornGround = 1 - smooth(8, 18, baseDist);
+                const pathNoise = smooth(0.55, 0.85, fbmNoise(nx * 0.9 + 200, nz * 0.9 - 80, 3));
+                col.lerp(dirt, THREE.MathUtils.clamp(wornGround * 0.85 + pathNoise * 0.10, 0, 0.9));
+
+                // PlaneGeometry UVs: (0,0) is bottom-left, (1,1) is top-right.
+                // However, ThreeJS canvas textures map (0,0) to top-left.
+                // y needs to be inverted so it maps properly to the vertices.
+                const invertedY = (texSize - 1) - py;
+                const idx = (invertedY * texSize + px) * 4;
+                
+                data[idx] = Math.min(255, Math.max(0, Math.floor(col.r * 255)));
+                data[idx + 1] = Math.min(255, Math.max(0, Math.floor(col.g * 255)));
+                data[idx + 2] = Math.min(255, Math.max(0, Math.floor(col.b * 255)));
+                data[idx + 3] = 255;
+            }
+        }
+        
+        ctx.putImageData(imgData, 0, 0);
+        const groundTex = new THREE.CanvasTexture(canvas);
+        if (THREE.sRGBEncoding) groundTex.encoding = THREE.sRGBEncoding;
+
         const groundMat = new THREE.MeshLambertMaterial({
-            vertexColors: true,
-            roughness: 0.8,
+            map: groundTex,
             flatShading: false
         });
 
