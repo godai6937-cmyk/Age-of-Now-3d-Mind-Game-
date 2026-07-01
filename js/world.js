@@ -28,6 +28,22 @@ export class NaturalResource extends GameEntity {
 
         this.mesh.position.copy(this.position);
     }
+    
+    update(dt) {
+        if (this.type === 'fishzone' && this.mesh) {
+            const time = performance.now() * 0.001;
+            this.mesh.children.forEach(child => {
+                if (child.userData && child.userData.isFish) {
+                    // Fish jumping animation
+                    const offset = child.userData.jumpOffset;
+                    const speed = child.userData.speed;
+                    // Jump up and down
+                    child.position.y = Math.sin(time * speed * 2.0 + offset) * 0.4 - 0.1;
+                    child.rotation.x = Math.PI / 2 + Math.cos(time * speed * 2.0 + offset) * 0.5;
+                }
+            });
+        }
+    }
 }
 
 // Simple Perlin-like noise for terrain coloring
@@ -723,7 +739,7 @@ export class WorldMap {
         };
 
         // Procedural Deep Forest Trees
-        for (let i = 0; i < 4500; i++) {
+        for (let i = 0; i < 7500; i++) {
             const x = this.prng.next() * this.planeSize - halfSize;
             const z = this.prng.next() * this.planeSize - halfSize;
             
@@ -771,15 +787,31 @@ export class WorldMap {
             }
         }
 
-        // Procedural Fish Zones
-        for (let i = 0; i < 40; i++) {
-            const x = this.prng.next() * this.planeSize - halfSize;
-            const z = this.prng.next() * this.planeSize - halfSize;
-            
-            const elevation = this.getElevationAtCoords(x, z);
-
-            if (elevation < 0.0) { // Deep water
-                spawnResource('fishzone', x, z, 500);
+        // Procedural Fish Zones (Guarantees every water body, even small ponds, gets fish)
+        const fishZones = [];
+        const step = 3;
+        for (let x = -halfSize; x < halfSize; x += step) {
+            for (let z = -halfSize; z < halfSize; z += step) {
+                // Add jitter
+                const jx = x + (this.prng.next() - 0.5) * step * 0.8;
+                const jz = z + (this.prng.next() - 0.5) * step * 0.8;
+                
+                const elevation = this.getElevationAtCoords(jx, jz);
+                if (elevation < -0.1) {
+                    let tooClose = false;
+                    for (let i = 0; i < fishZones.length; i++) {
+                        const dx = fishZones[i].x - jx;
+                        const dz = fishZones[i].z - jz;
+                        if (dx * dx + dz * dz < 64) { // Minimum 8 units apart
+                            tooClose = true;
+                            break;
+                        }
+                    }
+                    if (!tooClose) {
+                        spawnResource('fishzone', jx, jz, 500);
+                        fishZones.push({x: jx, z: jz});
+                    }
+                }
             }
         }
     }

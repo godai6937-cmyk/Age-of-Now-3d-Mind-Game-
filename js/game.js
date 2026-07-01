@@ -1,6 +1,6 @@
 // Main Game Controller Module
-import { meshBuilders, Unit, Villager, Soldier, Archer, Knight, Spearman, Crossbowman, SiegeRam, Monk, Paladin, Cannon, EliteArcher, Titan, WarElephant, Champion, FighterRobot, Helicopter, FighterPlane, FishBoat, WarShip, TransportBoat, Building, Tower, Projectile, Animal } from './entities.js?v=67';
-import { WorldMap, NaturalResource } from './world.js?v=68';
+import { meshBuilders, Unit, Villager, Soldier, Archer, Knight, Spearman, Crossbowman, SiegeRam, Monk, Paladin, Cannon, EliteArcher, Titan, WarElephant, Champion, FighterRobot, Helicopter, FighterPlane, FishBoat, WarShip, TransportBoat, Building, Tower, Projectile, Animal } from './entities.js?v=80';
+import { WorldMap, NaturalResource } from './world.js?v=72';
 import { InputController } from './input.js?v=66';
 import { EnemyAI } from './ai.js?v=15';
 import { audio } from './audio.js?v=33';
@@ -876,6 +876,23 @@ class GameController {
             'warship':      { Class: WarShip,      mesh: 'createWarShip' },
         };
 
+        if (['fishboat', 'warship', 'transportboat'].includes(type) && this.world) {
+            let foundWater = false;
+            for (let r = 0; r < 25; r += 2) {
+                for (let a = 0; a < Math.PI * 2; a += Math.PI / 4) {
+                    const nx = x + Math.cos(a) * r;
+                    const nz = z + Math.sin(a) * r;
+                    if (this.world.getElevationAtCoords(nx, nz) < -0.1) {
+                        x = nx;
+                        z = nz;
+                        foundWater = true;
+                        break;
+                    }
+                }
+                if (foundWater) break;
+            }
+        }
+
         const entry = UNIT_MAP[type];
         if (entry) {
             unit = new entry.Class(id, faction, x, z);
@@ -948,6 +965,18 @@ class GameController {
         b.buildProgress = 0;
         b.mesh.scale.set(1.0, 0.2, 1.0);
         this.scene.add(b.mesh);
+        
+        // Remove intersecting natural resources
+        for (let i = this.entities.length - 1; i >= 0; i--) {
+            const e = this.entities[i];
+            if (e.isResource && (e.type === 'tree' || e.type === 'forage' || e.type === 'gold' || e.type === 'stone')) {
+                const dist = Math.hypot(e.position.x - x, e.position.z - z);
+                if (dist < (b.radius || 2.0) * 1.5) {
+                    e.takeDamage(9999, null);
+                }
+            }
+        }
+
         this.entities.push(b);
         if (faction === this.localFaction) this.stats.buildingsBuilt++;
         return b;
@@ -1202,6 +1231,17 @@ class GameController {
             this.vfx.updateSelectionRings(this.selectedEntities);
         }
         if (this.world) this.world.animateWater(dt);
+
+        // Animate trees (wind effect)
+        const windTime = now * 0.001;
+        for (let i = 0; i < this.scene.children.length; i++) {
+            const child = this.scene.children[i];
+            if (child.userData && child.userData.isTree) {
+                const sway = Math.sin(windTime * child.userData.speed + child.userData.phase) * 0.04;
+                child.rotation.x = sway;
+                child.rotation.z = sway * 0.5;
+            }
+        }
 
         // Combat Audio State
         if (this.inCombat && (this.matchTime - this.lastCombatTime > 5.0)) {
@@ -1544,7 +1584,7 @@ class GameController {
             const groupTotal = { food: 0, wood: 0, gold: 0, stone: 0 };
             let hasVillager = false;
             this.selectedEntities.forEach(ent => {
-                if (ent.type === 'villager') {
+                if (ent.type === 'villager' || ent.type === 'fishboat') {
                     hasVillager = true;
                     groupTotal.food += ent.carrying.food;
                     groupTotal.wood += ent.carrying.wood;
@@ -1838,9 +1878,9 @@ class GameController {
                 extra.innerHTML += `<span>Speed: <strong>${ent.speed}</strong></span>`;
                 extra.innerHTML += `<span>State: <strong>${ent.state}</strong></span>`;
                 
-                if (ent.type === 'villager') {
+                if (ent.type === 'villager' || ent.type === 'fishboat') {
                     const totalCarried = Object.values(ent.carrying).reduce((a,b) => a+b, 0);
-                    extra.innerHTML += `<span style="grid-column: span 2">Carrying: 🌾<span id="rt-carry-food">${ent.carrying.food}</span> 🪓<span id="rt-carry-wood">${ent.carrying.wood}</span> 🪙<span id="rt-carry-gold">${ent.carrying.gold}</span> 🪨<span id="rt-carry-stone">${ent.carrying.stone}</span></span>`;
+                    extra.innerHTML += `<span style="grid-column: span 2">Carrying: 🥩<span id="rt-carry-food">${ent.carrying.food}</span> 🪵<span id="rt-carry-wood">${ent.carrying.wood}</span> 🪙<span id="rt-carry-gold">${ent.carrying.gold}</span> 🪨<span id="rt-carry-stone">${ent.carrying.stone}</span></span>`;
                 }
 
                 // Show cost to train this unit type
@@ -2201,15 +2241,15 @@ class GameController {
             p.style.gridColumn = 'span 4';
             p.style.color = '#fff';
             grid.appendChild(p);
-        } else if (['soldier','archer','knight','spearman','crossbowman','paladin','elitearcher','champion','titan','warelephant','fighterrobot','helicopter','fighterplane','warship'].includes(entity.type)) {
-            // Auto-Hunt for all military units
+        } else if (['soldier','archer','knight','spearman','crossbowman','paladin','elitearcher','champion','titan','warelephant','fighterrobot','helicopter','fighterplane','warship','fishboat'].includes(entity.type)) {
+            // Auto-Hunt for all military units and fishboat
             const autoBtn = document.createElement('button');
             autoBtn.className = 'cmd-btn' + (entity.autoMode ? ' active-cmd' : '');
-            autoBtn.innerHTML = `<span class="cmd-icon">🗺️</span> Auto-Hunt`;
+            autoBtn.innerHTML = `<span class="cmd-icon">🗺️</span> ${entity.type === 'fishboat' ? 'Auto-Fish' : 'Auto-Hunt'}`;
             autoBtn.innerHTML += `
                 <div class="tooltip">
-                    <h5>Auto-Hunt Mode</h5>
-                    <p>Toggle auto-hunt for enemies.</p>
+                    <h5>${entity.type === 'fishboat' ? 'Auto-Fish Mode' : 'Auto-Hunt Mode'}</h5>
+                    <p>Toggle auto-${entity.type === 'fishboat' ? 'fish for food' : 'hunt for enemies'}.</p>
                 </div>
             `;
             autoBtn.addEventListener('click', () => {

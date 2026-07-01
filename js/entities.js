@@ -62,7 +62,7 @@ export const materials = {
     chainmail: new THREE.MeshLambertMaterial({ map: texChainmail, color: 0xA0A6B0, metalness: 0.72, roughness: 0.32 }),
     wood: new THREE.MeshLambertMaterial({ map: texWood, color: 0x8B5E3C, roughness: 0.88 }),
     woodLight: new THREE.MeshLambertMaterial({ map: texWood, color: 0xAA7E5C, roughness: 0.85 }),
-    bark: new THREE.MeshLambertMaterial({ map: texBark, color: 0x8B6038, roughness: 0.92 }),
+    bark: new THREE.MeshLambertMaterial({ map: texBark, color: 0x3e2723, roughness: 0.95 }),
     leaves: new THREE.MeshLambertMaterial({ map: texLeaves, color: 0x258C46, roughness: 0.8 }),
     leavesDark: new THREE.MeshLambertMaterial({ map: texLeaves, color: 0x1B6D34, roughness: 0.82 }),
     leavesLight: new THREE.MeshLambertMaterial({ map: texLeaves, color: 0x49A85A, roughness: 0.76 }),
@@ -878,81 +878,84 @@ export const meshBuilders = {
     // --- RESOURCES ---
     createTree() {
         const group = new THREE.Group();
-
-        const heightScale = 0.88 + Math.random() * 0.55;
-        const trunkHeight = 1.15 * heightScale;
-        const trunkGeo = new THREE.CylinderGeometry(0.10, 0.16, trunkHeight, 8);
-        const trunk = new THREE.Mesh(trunkGeo, materials.bark);
+        
+        const type = Math.floor(Math.random() * 3); // 0: Pine, 1: Oak, 2: Birch
+        const heightScale = (type === 2 ? 1.2 : 0.88) + Math.random() * 0.55;
+        const trunkHeight = (type === 2 ? 1.5 : 1.15) * heightScale;
+        const trunkGeo = new THREE.CylinderGeometry(type === 2 ? 0.06 : 0.10, type === 2 ? 0.10 : 0.16, trunkHeight, 8);
+        
+        const barkMat = materials.bark;
+        const trunk = new THREE.Mesh(trunkGeo, barkMat);
         trunk.position.y = trunkHeight * 0.5;
         trunk.castShadow = true;
         trunk.receiveShadow = true;
         group.add(trunk);
 
-        const topSpireGeo = new THREE.CylinderGeometry(0.035, 0.07, 0.5 * heightScale, 6);
-        const topSpire = new THREE.Mesh(topSpireGeo, materials.bark);
-        topSpire.position.y = trunkHeight + 0.1 * heightScale;
-        topSpire.castShadow = true;
-        group.add(topSpire);
-
         for (let a = 0; a < Math.PI * 2; a += Math.PI / 3) {
-            const rootGeo = new THREE.SphereGeometry(0.09, 5, 4);
-            const root = new THREE.Mesh(rootGeo, materials.bark);
+            const rootGeo = new THREE.SphereGeometry(type === 2 ? 0.05 : 0.09, 5, 4);
+            const root = new THREE.Mesh(rootGeo, barkMat);
             root.position.set(Math.cos(a) * 0.15, 0.05, Math.sin(a) * 0.15);
             root.scale.set(1.2, 0.45, 1.0);
             group.add(root);
         }
 
-        const branchLevels = 3 + Math.floor(Math.random() * 2);
-        for (let i = 0; i < branchLevels; i++) {
-            const levelY = 0.7 * heightScale + i * 0.34;
-            const branchCount = 4 + Math.floor(Math.random() * 2);
-            for (let j = 0; j < branchCount; j++) {
-                const branch = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.018, 0.028, 0.42 + Math.random() * 0.14, 5),
-                    materials.bark
+        const canopyGroup = new THREE.Group();
+        group.add(canopyGroup);
+
+        if (type === 0) {
+            const topSpireGeo = new THREE.CylinderGeometry(0.035, 0.07, 0.5 * heightScale, 6);
+            const topSpire = new THREE.Mesh(topSpireGeo, barkMat);
+            topSpire.position.y = trunkHeight + 0.1 * heightScale;
+            topSpire.castShadow = true;
+            group.add(topSpire);
+
+            const canopyLayers = [
+                { radius: 0.72, height: 0.8, y: trunkHeight + 0.20, mat: materials.leavesDark },
+                { radius: 0.58, height: 0.72, y: trunkHeight + 0.65, mat: materials.leaves },
+                { radius: 0.44, height: 0.62, y: trunkHeight + 1.02, mat: materials.leavesLight },
+                { radius: 0.28, height: 0.42, y: trunkHeight + 1.34, mat: materials.leavesLight }
+            ];
+
+            canopyLayers.forEach((layer, idx) => {
+                const cone = new THREE.Mesh(
+                    new THREE.ConeGeometry(layer.radius * heightScale, layer.height * heightScale, 8),
+                    layer.mat
                 );
-                const angle = (j / branchCount) * Math.PI * 2 + Math.random() * 0.22;
-                branch.position.set(Math.cos(angle) * 0.12, levelY, Math.sin(angle) * 0.12);
-                branch.rotation.z = 1.1 + Math.random() * 0.18;
-                branch.rotation.y = angle;
-                branch.castShadow = true;
-                group.add(branch);
+                cone.position.y = layer.y;
+                cone.castShadow = true;
+                canopyGroup.add(cone);
+            });
+        } else if (type === 1) {
+            const puffs = 4 + Math.floor(Math.random() * 3);
+            for (let i = 0; i < puffs; i++) {
+                const isTop = i === 0;
+                const rad = (isTop ? 0.8 : 0.5 + Math.random() * 0.3) * heightScale;
+                const puff = new THREE.Mesh(new THREE.DodecahedronGeometry(rad, 1), i % 2 === 0 ? materials.leavesDark : materials.leaves);
+                const py = trunkHeight + (isTop ? 0.4 : 0.1 + Math.random() * 0.4);
+                const px = isTop ? 0 : (Math.random() - 0.5) * 0.8 * heightScale;
+                const pz = isTop ? 0 : (Math.random() - 0.5) * 0.8 * heightScale;
+                puff.position.set(px, py, pz);
+                puff.scale.set(1, 0.8, 1);
+                puff.castShadow = true;
+                canopyGroup.add(puff);
+            }
+        } else if (type === 2) {
+            const puffs = 3 + Math.floor(Math.random() * 2);
+            for (let i = 0; i < puffs; i++) {
+                const rad = (0.4 + Math.random() * 0.2) * heightScale;
+                const puff = new THREE.Mesh(new THREE.DodecahedronGeometry(rad, 1), materials.leavesLight);
+                const py = trunkHeight - 0.4 + i * 0.6;
+                const px = (Math.random() - 0.5) * 0.3;
+                const pz = (Math.random() - 0.5) * 0.3;
+                puff.position.set(px, py, pz);
+                puff.scale.set(1.2, 0.6, 1.2);
+                puff.castShadow = true;
+                canopyGroup.add(puff);
             }
         }
 
-        const canopyLayers = [
-            { radius: 0.72, height: 0.8, y: trunkHeight + 0.20, mat: materials.leavesDark },
-            { radius: 0.58, height: 0.72, y: trunkHeight + 0.65, mat: materials.leaves },
-            { radius: 0.44, height: 0.62, y: trunkHeight + 1.02, mat: materials.leavesLight },
-            { radius: 0.28, height: 0.42, y: trunkHeight + 1.34, mat: materials.leavesLight }
-        ];
-
-        canopyLayers.forEach((layer, idx) => {
-            const cone = new THREE.Mesh(
-                new THREE.ConeGeometry(layer.radius * heightScale, layer.height * heightScale, 8),
-                layer.mat
-            );
-            cone.position.y = layer.y;
-            cone.castShadow = true;
-            group.add(cone);
-
-            if (idx < 3) {
-                const puff = new THREE.Mesh(
-                    new THREE.SphereGeometry((layer.radius * 0.33) * heightScale, 6, 5),
-                    idx === 0 ? materials.leavesDark : materials.leaves
-                );
-                puff.position.set(
-                    (Math.random() - 0.5) * 0.18,
-                    layer.y + 0.08,
-                    (Math.random() - 0.5) * 0.18
-                );
-                puff.scale.set(1.4, 0.8, 1.25);
-                puff.castShadow = true;
-                group.add(puff);
-            }
-        });
-
         group.name = 'tree';
+        group.userData = { isTree: true, phase: Math.random() * Math.PI * 2, speed: 0.5 + Math.random() * 0.5 };
         return group;
     },
 
@@ -1125,13 +1128,38 @@ export const meshBuilders = {
         }
 
         // Add fishes
-        const fishGeo = new THREE.ConeGeometry(0.08, 0.25, 4);
-        fishGeo.rotateX(Math.PI / 2);
-        const fishMat = new THREE.MeshLambertMaterial({color: 0x3b82f6});
-        for (let i = 0; i < 5; i++) {
-            const fish = new THREE.Mesh(fishGeo, fishMat);
+        const createFish = () => {
+            const fishGroup = new THREE.Group();
+            const fishMat = new THREE.MeshLambertMaterial({color: 0x4da6ff}); // Light blue
+            
+            const body = new THREE.Mesh(new THREE.SphereGeometry(1, 8, 8), fishMat);
+            body.scale.set(0.04, 0.1, 0.2); 
+            fishGroup.add(body);
+            
+            const tailGeo = new THREE.CylinderGeometry(0, 1, 1, 3);
+            tailGeo.rotateX(Math.PI / 2);
+            const tail = new THREE.Mesh(tailGeo, fishMat);
+            tail.scale.set(0.01, 0.08, 0.08);
+            tail.position.set(0, 0, -0.2);
+            tail.rotation.y = Math.PI;
+            fishGroup.add(tail);
+            
+            const finGeo = new THREE.CylinderGeometry(0, 1, 1, 3);
+            finGeo.rotateX(Math.PI / 2);
+            const fin = new THREE.Mesh(finGeo, fishMat);
+            fin.scale.set(0.005, 0.05, 0.06);
+            fin.position.set(0, 0.1, -0.02);
+            fin.rotation.x = -0.3;
+            fishGroup.add(fin);
+            
+            return fishGroup;
+        };
+
+        for (let i = 0; i < 7; i++) {
+            const fish = createFish();
             fish.position.set((Math.random() - 0.5) * 1.5, -0.05, (Math.random() - 0.5) * 1.5);
             fish.rotation.y = Math.random() * Math.PI * 2;
+            fish.userData = { isFish: true, jumpOffset: Math.random() * Math.PI * 2, speed: 2.0 + Math.random() };
             group.add(fish);
         }
 
@@ -2096,23 +2124,53 @@ export const meshBuilders = {
         const group = new THREE.Group();
         const mat = getFactionMat(faction, false);
         
-        // Hull
-        const hull = new THREE.Mesh(new THREE.ConeGeometry(0.5, 1.8, 6), materials.wood);
-        hull.rotation.x = Math.PI / 2;
-        hull.position.set(0, 0.2, 0);
-        hull.scale.set(1, 1, 0.5); // Flatten a bit
-        hull.castShadow = true;
-        group.add(hull);
+        // Hull - Main Body
+        const hullMain = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.4, 1.6), materials.wood);
+        hullMain.position.set(0, 0.2, -0.2); 
+        hullMain.castShadow = true;
+        group.add(hullMain);
 
-        // Mast
-        const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.2, 4), materials.bark);
-        mast.position.set(0, 0.8, -0.2);
+        // Hull - Bow (Front)
+        const bowGeo = new THREE.ConeGeometry(0.5, 0.8, 4);
+        bowGeo.rotateY(Math.PI / 4); 
+        bowGeo.rotateX(-Math.PI / 2); // Point forward (+Z)
+        const bow = new THREE.Mesh(bowGeo, materials.wood);
+        bow.position.set(0, 0.2, 1.0); 
+        bow.scale.set(1, 0.57, 1);
+        bow.castShadow = true;
+        group.add(bow);
+
+        // Cabin (Wheelhouse)
+        const cabin = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.4, 0.5), materials.woodLight);
+        cabin.position.set(0, 0.6, -0.2); 
+        cabin.castShadow = true;
+        group.add(cabin);
+        
+        // Cabin Roof
+        const roof = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.05, 0.6), mat); // Faction colored roof
+        roof.position.set(0, 0.825, -0.2);
+        roof.castShadow = true;
+        group.add(roof);
+
+        // Mast (Tall pole in front of cabin)
+        const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.03, 1.6, 4), materials.metalDark);
+        mast.position.set(0, 1.0, 0.3);
+        mast.castShadow = true;
         group.add(mast);
 
-        // Sail
-        const sail = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.05), mat);
-        sail.position.set(0, 0.8, -0.15);
-        group.add(sail);
+        // Boom (Horizontal fishing crane pole)
+        const boom = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.2, 4), materials.metalDark);
+        boom.rotation.x = Math.PI / 2;
+        boom.position.set(0, 0.8, -0.3);
+        boom.castShadow = true;
+        group.add(boom);
+
+        // Rigging line (diagonal line from mast top to back of hull)
+        const rigGeo = new THREE.CylinderGeometry(0.01, 0.01, 2.2, 3);
+        const rig = new THREE.Mesh(rigGeo, materials.metalDark);
+        rig.rotation.x = -Math.PI / 4;
+        rig.position.set(0, 1.0, -0.4);
+        group.add(rig);
 
         return group;
     },
@@ -2121,39 +2179,110 @@ export const meshBuilders = {
         const group = new THREE.Group();
         const mat = getFactionMat(faction, false);
         
-        // Hull
-        const hull = new THREE.Mesh(new THREE.ConeGeometry(0.8, 3.0, 8), materials.woodDark);
-        hull.rotation.x = Math.PI / 2;
-        hull.position.set(0, 0.4, 0);
-        hull.scale.set(1, 1, 0.6); // Flatten
-        hull.castShadow = true;
-        group.add(hull);
+        // Hull - Main Body
+        const hullMain = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.6, 2.6), materials.wood);
+        hullMain.position.set(0, 0.3, -0.3); 
+        hullMain.castShadow = true;
+        group.add(hullMain);
+
+        // Hull - Upper railing (Faction color)
+        const rail = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.2, 2.65), mat);
+        rail.position.set(0, 0.7, -0.3);
+        rail.castShadow = true;
+        group.add(rail);
+
+        // Hull - Bow (Front)
+        const bowGeo = new THREE.ConeGeometry(0.85, 1.2, 4);
+        bowGeo.rotateY(Math.PI / 4);
+        bowGeo.rotateX(-Math.PI / 2);
+        const bow = new THREE.Mesh(bowGeo, materials.wood);
+        bow.position.set(0, 0.3, 1.6);
+        bow.scale.set(1, 0.5, 1);
+        bow.castShadow = true;
+        group.add(bow);
+        
+        const bowRailGeo = new THREE.ConeGeometry(0.88, 1.25, 4);
+        bowRailGeo.rotateY(Math.PI / 4);
+        bowRailGeo.rotateX(-Math.PI / 2);
+        const bowRail = new THREE.Mesh(bowRailGeo, mat);
+        bowRail.position.set(0, 0.7, 1.62);
+        bowRail.scale.set(1, 0.16, 1);
+        bowRail.castShadow = true;
+        group.add(bowRail);
+
+        // Stern Castle (Back elevated area)
+        const stern = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.5, 0.8), materials.woodDark);
+        stern.position.set(0, 0.85, -1.2);
+        stern.castShadow = true;
+        group.add(stern);
+
+        // Bowsprit (pole at the front)
+        const bowsprit = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.06, 1.8, 4), materials.bark);
+        bowsprit.position.set(0, 0.9, 2.4);
+        bowsprit.rotation.x = -Math.PI / 2 - 0.2;
+        group.add(bowsprit);
+
+        // Mast 1 (Front Mast)
+        const mast1 = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 3.0, 4), materials.bark);
+        mast1.position.set(0, 1.9, 0.6);
+        group.add(mast1);
+        
+        // Sail 1 Lower
+        const sail1L = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.0, 0.05), materials.woodLight);
+        sail1L.position.set(0, 1.5, 0.65);
+        sail1L.rotation.x = 0.1;
+        group.add(sail1L);
+        
+        // Sail 1 Upper
+        const sail1U = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.8, 0.05), materials.woodLight);
+        sail1U.position.set(0, 2.5, 0.65);
+        sail1U.rotation.x = 0.1;
+        group.add(sail1U);
+
+        // Mast 2 (Rear Mast)
+        const mast2 = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 3.2, 4), materials.bark);
+        mast2.position.set(0, 2.0, -0.6);
+        group.add(mast2);
+        
+        // Sail 2 Lower
+        const sail2L = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.1, 0.05), materials.woodLight);
+        sail2L.position.set(0, 1.5, -0.55);
+        sail2L.rotation.x = 0.1;
+        group.add(sail2L);
+        
+        // Sail 2 Upper
+        const sail2U = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.8, 0.05), materials.woodLight);
+        sail2U.position.set(0, 2.6, -0.55);
+        sail2U.rotation.x = 0.1;
+        group.add(sail2U);
+
+        // Jib Sail (Triangular front sail)
+        const jibGeo = new THREE.CylinderGeometry(0, 1, 1, 3);
+        jibGeo.rotateX(Math.PI / 2);
+        const jib = new THREE.Mesh(jibGeo, materials.woodLight);
+        jib.scale.set(0.05, 1.5, 1.2); 
+        jib.position.set(0, 1.3, 1.8);
+        jib.rotation.x = -0.4;
+        group.add(jib);
+        
+        // Spanker Sail (Triangular back sail)
+        const spankerGeo = new THREE.CylinderGeometry(0, 1, 1, 3);
+        spankerGeo.rotateX(Math.PI / 2);
+        const spanker = new THREE.Mesh(spankerGeo, materials.woodLight);
+        spanker.scale.set(0.05, 1.2, 1.0);
+        spanker.position.set(0, 1.4, -1.3);
+        spanker.rotation.y = Math.PI; // Point backwards
+        group.add(spanker);
 
         // Cannons
-        for(let z = -0.5; z <= 0.5; z += 0.5) {
+        for(let z = -1.0; z <= 0.5; z += 0.75) {
             for(let x = -1; x <= 1; x += 2) {
                 const cannon = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.6, 6), materials.metalDark);
                 cannon.rotation.z = Math.PI / 2 * x;
-                cannon.position.set(x * 0.4, 0.6, z);
+                cannon.position.set(x * 0.65, 0.6, z);
                 group.add(cannon);
             }
         }
-
-        // Mast 1
-        const mast1 = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.8, 4), materials.bark);
-        mast1.position.set(0, 1.2, -0.4);
-        group.add(mast1);
-        const sail1 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.0, 0.05), mat);
-        sail1.position.set(0, 1.2, -0.35);
-        group.add(sail1);
-
-        // Mast 2
-        const mast2 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.4, 4), materials.bark);
-        mast2.position.set(0, 1.0, 0.6);
-        group.add(mast2);
-        const sail2 = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.8, 0.05), mat);
-        sail2.position.set(0, 1.0, 0.65);
-        group.add(sail2);
 
         return group;
     },
@@ -2600,24 +2729,25 @@ export class Unit extends GameEntity {
                 }
                 
                 if (this.autoMode) {
-                    if (this.type === 'villager') {
+                    if (this.type === 'villager' || this.type === 'fishboat') {
                         // Smart auto-work: pick resource type based on player need & nearby availability
-                        const searchRadius = 40;
+                        const searchRadius = this.type === 'fishboat' ? 120 : 40;
                         
                         // Gather all nearby gatherable resources
                         const nearbyResources = [];
                         game.entities.forEach(e => {
                             if (e.dead || !e.isResource) return;
+                            if (this.type === 'fishboat' && e.type !== 'fishzone') return;
                             if (e.type === 'farm' && (!e.isCompleted || e.faction !== this.faction)) return;
                             const d = this.distXZ(this.position, e.position);
                             if (d > searchRadius) return;
                             
-                            // Count how many villagers are already gathering from this resource
+                            // Count how many units are already gathering from this resource
                             const crowdCount = game.entities.filter(other =>
                                 other.isUnit &&
                                 !other.dead &&
                                 other.faction === this.faction &&
-                                other.type === 'villager' &&
+                                other.type === this.type &&
                                 other.targetEntity === e &&
                                 (other.state === 'GATHER' || other.state === 'RETURN_RESOURCE')
                             ).length;
@@ -2684,7 +2814,7 @@ export class Unit extends GameEntity {
                                 this.moveTo(tx, tz);
                             }
                         }
-                    } else if (this.type !== 'villager') {
+                    } else if (this.type !== 'villager' && this.type !== 'fishboat') {
                         // Scan for the nearest enemy
                         const nearestEnemy = game.findNearestEnemy(this.position, this.faction, 25.0);
                         if (nearestEnemy) {
@@ -2702,7 +2832,7 @@ export class Unit extends GameEntity {
                     }
                 } else {
                     // Standard auto attack check for military if not in autoMode
-                    if (this.type !== 'villager') {
+                    if (this.type !== 'villager' && this.type !== 'fishboat') {
                         if (Math.random() < 0.1) { // Throttle check
                             const searchRadius = this.isFlying ? 30.0 : 12.0;
                             const nearestEnemy = game.findNearestEnemy(this.position, this.faction, searchRadius);
@@ -2717,18 +2847,19 @@ export class Unit extends GameEntity {
                 this.moveTowardsTarget(dt, world); 
                 // Mid-movement scan when in autoMode
                 if (this.autoMode && Math.random() < 0.05) {
-                    if (this.type === 'villager') {
+                    if (this.type === 'villager' || this.type === 'fishboat') {
                         // Mid-move smart scan: intercept nearby resources based on player need
                         const nearbyResources = [];
                         game.entities.forEach(e => {
                             if (e.dead || !e.isResource) return;
+                            if (this.type === 'fishboat' && e.type !== 'fishzone') return;
                             if (e.type === 'farm' && (!e.isCompleted || e.faction !== this.faction)) return;
                             const d = this.distXZ(this.position, e.position);
-                            if (d > 15) return; // intercept range
+                            if (d > (this.type === 'fishboat' ? 40 : 15)) return; // intercept range
                             const crowdCount = game.entities.filter(other =>
                                 other.isUnit && !other.dead &&
                                 other.faction === this.faction &&
-                                other.type === 'villager' &&
+                                other.type === this.type &&
                                 other.targetEntity === e &&
                                 (other.state === 'GATHER' || other.state === 'RETURN_RESOURCE')
                             ).length;
@@ -2764,7 +2895,7 @@ export class Unit extends GameEntity {
                                 this.setOrder('GATHER', bestResource);
                             }
                         }
-                    } else if (this.type !== 'villager') {
+                    } else if (this.type !== 'villager' && this.type !== 'fishboat') {
                         const nearestEnemy = game.findNearestEnemy(this.position, this.faction, 15.0);
                         if (nearestEnemy) {
                             this.setOrder('ATTACK', nearestEnemy);
@@ -3338,7 +3469,29 @@ export class Unit extends GameEntity {
                 needsPathfind = true;
             } else if (moved < Math.max(0.005, this.speed * dt * 0.12)) {
                 this.stuckTimer += dt;
-                if (this.stuckTimer > 0.55) {
+                if (this.stuckTimer > 1.2) {
+                    // AI Escape mechanism: Pick a clear point nearby and path to it, then to destination
+                    this.stuckTimer = 0;
+                    const escapeAngle = Math.random() * Math.PI * 2;
+                    const escapeDist = 4.0 + Math.random() * 4.0;
+                    const ex = this.position.x + Math.cos(escapeAngle) * escapeDist;
+                    const ez = this.position.z + Math.sin(escapeAngle) * escapeDist;
+                    
+                    let valid = true;
+                    if (world && world.getElevationAtCoords && !this.isFlying) {
+                        const elev = world.getElevationAtCoords(ex, ez);
+                        if (this.isBoat) {
+                            if (elev >= -0.1) valid = false;
+                        } else {
+                            if (elev < -0.1) valid = false;
+                        }
+                    }
+                    if (valid) {
+                        this.pathWaypoints = [new THREE.Vector3(ex, this.position.y, ez), this.targetPos.clone()];
+                        this.pathFinalDest = this.targetPos.clone();
+                        if (window.game && window.game.vfx) window.game.vfx.spawnSmoke(this.position);
+                    }
+                } else if (this.stuckTimer > 0.55) {
                     needsPathfind = true;
                     isRoamFallback = true;
                 }
@@ -3525,6 +3678,15 @@ export class Unit extends GameEntity {
             }
             this.state = 'IDLE';
         }
+    }
+
+    getResKey(type) {
+        if (type === 'tree') return 'wood';
+        if (type === 'forage' || type === 'deer' || type === 'animal' || type === 'carcass' || type === 'fishzone') return 'food';
+        if (type === 'gold') return 'gold';
+        if (type === 'stone') return 'stone';
+        if (type === 'farm') return 'food';
+        return 'wood';
     }
 }
 
@@ -3742,15 +3904,6 @@ export class Villager extends Unit {
             const dir = new THREE.Vector3().copy(this.targetEntity.position).sub(this.position);
             this.mesh.rotation.y = Math.atan2(dir.x, dir.z);
         }
-    }
-
-    getResKey(type) {
-        if (type === 'tree') return 'wood';
-        if (type === 'forage' || type === 'deer' || type === 'animal' || type === 'carcass') return 'food';
-        if (type === 'gold') return 'gold';
-        if (type === 'stone') return 'stone';
-        if (type === 'farm') return 'food';
-        return 'wood';
     }
 }
 
@@ -4417,7 +4570,8 @@ export class FishBoat extends Unit {
         this.radius = 0.8;
         this.isBoat = true;
         this.gatherTargetType = 'fishzone'; // Specific gather target
-        this.carryingCapacity = 30;
+        this.carryingCapacity = 20;
+        this.carrying = { food: 0, wood: 0, gold: 0, stone: 0 };
     }
     
     animateUnit(dt) {
@@ -4442,7 +4596,23 @@ export class FishBoat extends Unit {
         }
         
         const totalCarried = Object.values(this.carrying).reduce((a, b) => a + b, 0);
-        if (totalCarried >= this.carryingCapacity) { this.returnResources(game); return; }
+        if (totalCarried >= this.carryingCapacity) { 
+            // Instantly submit food without returning to base
+            if (!game.factionResources) game.factionResources = {};
+            if (!game.factionResources[this.faction]) game.factionResources[this.faction] = { food: 200, wood: 200, gold: 100, stone: 0 };
+            for (const res in this.carrying) {
+                if (this.carrying[res] > 0) {
+                    game.factionResources[this.faction][res] += this.carrying[res];
+                    if (this.faction === game.localFaction) game.playerResources[res] = game.factionResources[this.faction][res];
+                    this.carrying[res] = 0;
+                }
+            }
+            if (this.faction === game.localFaction) {
+                game.updateHUD();
+                if (typeof audio !== 'undefined' && audio.playDropoff) audio.playDropoff(this.position);
+            }
+            return; 
+        }
 
         this.gatherTargetType = 'fishzone';
         const gatherSpot = this.getApproachPosition(this.targetEntity, 1.0);
@@ -4478,8 +4648,8 @@ export class FishBoat extends Unit {
         if (!this.targetEntity || this.targetEntity.dead) {
             this.returnResources(game); return;
         }
-        const approachPos = this.getApproachPosition(this.targetEntity, 1.5);
-        if (this.distXZ(this.position, approachPos) > 1.5) {
+        const approachPos = this.getApproachPosition(this.targetEntity, 5.0);
+        if (this.distXZ(this.position, approachPos) > 5.0) {
             this.targetPos.copy(approachPos);
             this.moveTowardsTarget(dt, world);
         } else {
