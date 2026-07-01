@@ -233,6 +233,38 @@ export class WorldMap {
         }
     }
 
+    flattenArea(x, z, radius, targetElevation) {
+        if (!this._elevationGrid || !this.ground) return;
+        const halfSize = this.planeSize / 2;
+        const cellSize = this.planeSize / this._elevationSegments;
+        
+        const startC = Math.max(0, Math.floor((x - radius + halfSize) / cellSize));
+        const endC = Math.min(this._elevationSegments, Math.ceil((x + radius + halfSize) / cellSize));
+        const startR = Math.max(0, Math.floor((z - radius + halfSize) / cellSize));
+        const endR = Math.min(this._elevationSegments, Math.ceil((z + radius + halfSize) / cellSize));
+        
+        let changed = false;
+        const posAttr = this.ground.geometry.attributes.position;
+        for (let r = startR; r <= endR; r++) {
+            for (let c = startC; c <= endC; c++) {
+                const wx = (c * cellSize) - halfSize;
+                const wz = (r * cellSize) - halfSize;
+                const dist = Math.hypot(wx - x, wz - z);
+                if (dist <= radius) {
+                    this._elevationGrid[r][c] = targetElevation;
+                    const vertexIndex = r * (this._elevationSegments + 1) + c;
+                    posAttr.setY(vertexIndex, targetElevation);
+                    changed = true;
+                }
+            }
+        }
+        
+        if (changed) {
+            posAttr.needsUpdate = true;
+            this.ground.geometry.computeVertexNormals();
+        }
+    }
+
     generate() {
         // --- 1. SKY DOME ---
         this.createSkyDome();
@@ -395,13 +427,13 @@ export class WorldMap {
                 Math.abs(this.getRawElevation(x + 0.75, z) - this.getRawElevation(x - 0.75, z)) +
                 Math.abs(this.getRawElevation(x, z + 0.75) - this.getRawElevation(x, z - 0.75));
 
-            const grassA = new THREE.Color(0.17, 0.37, 0.14);
-            const grassB = new THREE.Color(0.30, 0.54, 0.20);
-            const meadow = new THREE.Color(0.44, 0.60, 0.24);
-            const dirt = new THREE.Color(0.45, 0.33, 0.20);
-            const wetSand = new THREE.Color(0.65, 0.61, 0.44);
-            const drySand = new THREE.Color(0.86, 0.80, 0.58);
-            const rock = new THREE.Color(0.40, 0.42, 0.46);
+            const grassA = new THREE.Color(0.38, 0.80, 0.30);
+            const grassB = new THREE.Color(0.48, 0.86, 0.36);
+            const meadow = new THREE.Color(0.60, 0.90, 0.42);
+            const dirt = new THREE.Color(0.70, 0.58, 0.38);
+            const wetSand = new THREE.Color(0.78, 0.72, 0.55);
+            const drySand = new THREE.Color(0.92, 0.85, 0.65);
+            const rock = new THREE.Color(0.55, 0.58, 0.62);
             const snow = new THREE.Color(0.94, 0.95, 0.97);
 
             let col = grassA.clone().lerp(grassB, grassVar);
@@ -443,97 +475,12 @@ export class WorldMap {
         groundGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
         groundGeo.computeVertexNormals();
 
-        const textureLoader = new THREE.TextureLoader();
-        const grassTex = textureLoader.load('assets/textures/grass.png');
-        const dirtTex = textureLoader.load('assets/textures/dirt_ground.png');
-        const rockTex = textureLoader.load('assets/textures/dark_stone.png');
-        [grassTex, dirtTex, rockTex].forEach((tex) => {
-            tex.wrapS = THREE.RepeatWrapping;
-            tex.wrapT = THREE.RepeatWrapping;
-            tex.magFilter = THREE.LinearFilter;
-            tex.minFilter = THREE.LinearMipmapLinearFilter;
-            tex.anisotropy = 16;
-            tex.encoding = THREE.sRGBEncoding;
-        });
-        grassTex.repeat.set(12, 12);
-        dirtTex.repeat.set(18, 18);
-        rockTex.repeat.set(12, 12);
-
         const groundMat = new THREE.MeshStandardMaterial({
-            map: grassTex,
             vertexColors: true,
-            roughness: 0.85,
+            roughness: 0.95,
             metalness: 0.0,
             flatShading: false
         });
-
-        groundMat.onBeforeCompile = (shader) => {
-
-            shader.uniforms.dirtMap = { value: dirtTex };
-            shader.uniforms.rockMap = { value: rockTex };
-            shader.uniforms.uCloudTime = { value: 0 };
-
-            shader.vertexShader = shader.vertexShader
-                .replace('#include <common>', '#include <common>\nvarying vec3 vWorldPos;\nvarying vec3 vWorldNormalCustom;')
-                .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvWorldPos = worldPosition.xyz;\nvWorldNormalCustom = normalize(mat3(modelMatrix) * normal);');
-
-            shader.fragmentShader = shader.fragmentShader
-                .replace(
-                    '#include <common>',
-                    '#include <common>\nvarying vec3 vWorldPos;\nvarying vec3 vWorldNormalCustom;\nuniform sampler2D dirtMap;\nuniform sampler2D rockMap;\nuniform float uCloudTime;\nfloat hash21(vec2 p) {\n    p = fract(p * vec2(123.34, 345.45));\n    p += dot(p, p + 34.345);\n    return fract(p.x * p.y);\n}\nfloat noise21(vec2 p) {\n    vec2 i = floor(p);\n    vec2 f = fract(p);\n    vec2 u = f * f * (3.0 - 2.0 * f);\n    return mix(\n        mix(hash21(i + vec2(0.0, 0.0)), hash21(i + vec2(1.0, 0.0)), u.x),\n        mix(hash21(i + vec2(0.0, 1.0)), hash21(i + vec2(1.0, 1.0)), u.x),\n        u.y\n    );\n}\nfloat fbm21(vec2 p) {\n    float value = 0.0;\n    float amp = 0.5;\n    for (int i = 0; i < 4; i++) {\n        value += noise21(p) * amp;\n        p = p * 2.02 + vec2(17.3, 11.7);\n        amp *= 0.5;\n    }\n    return value;\n}\nfloat cloudLayer(vec2 p) {\n    float c1 = sin(p.x * 0.025 + uCloudTime * 0.07) * 0.5 + 0.5;\n    float c2 = cos(p.y * 0.022 - uCloudTime * 0.04) * 0.5 + 0.5;\n    float c3 = sin((p.x + p.y) * 0.012 - uCloudTime * 0.05) * 0.5 + 0.5;\n    return c1 * 0.4 + c2 * 0.35 + c3 * 0.25;\n}'
-                )
-                .replace(
-                    '#include <map_fragment>',
-                    `#ifdef USE_MAP
-    vec2 worldUv = vWorldPos.xz;
-    vec2 grassUvA = worldUv * 0.090;
-    vec2 grassUvB = worldUv * 0.153;
-    vec2 grassUvC = worldUv.yx * 0.117;
-    vec2 dirtUv = worldUv * 0.108;
-    vec2 rockUv = worldUv * 0.082;
-    mat2 r1 = mat2(cos(1.137), -sin(1.137), sin(1.137), cos(1.137));
-    mat2 r2 = mat2(cos(0.73), -sin(0.73), sin(0.73), cos(0.73));
-    mat2 r3 = mat2(cos(-0.91), -sin(-0.91), sin(-0.91), cos(-0.91));
-    grassUvB = r1 * grassUvB;
-    grassUvC = r3 * grassUvC + vec2(4.2, -2.7);
-    dirtUv = r2 * dirtUv + vec2(0.17, 0.09);
-    rockUv = r1 * rockUv + vec2(0.31, 0.13);
-
-    float macroNoise = fbm21(worldUv * 0.040);
-    float detailNoise = fbm21(worldUv * 0.180 + vec2(8.0, -3.0));
-    float grassBlendA = smoothstep(0.18, 0.82, macroNoise);
-    float grassBlendB = smoothstep(0.22, 0.86, detailNoise);
-
-    vec4 grassTexA = texture2D(map, grassUvA);
-    vec4 grassTexB = texture2D(map, grassUvB);
-    vec4 grassTexC = texture2D(map, grassUvC);
-    vec4 grassTexel = mix(grassTexA, grassTexB, grassBlendA * 0.55 + 0.15);
-    grassTexel = mix(grassTexel, grassTexC, grassBlendB * 0.35 + 0.10);
-    vec4 dirtTexel = mix(texture2D(dirtMap, dirtUv), texture2D(dirtMap, dirtUv * 1.63 + vec2(-1.4, 2.1)), 0.42);
-    vec4 rockTexel = mix(texture2D(rockMap, rockUv), texture2D(rockMap, rockUv * 1.46 + vec2(1.8, -0.9)), 0.48);
-
-    grassTexel = mapTexelToLinear(grassTexel);
-    dirtTexel = mapTexelToLinear(dirtTexel);
-    rockTexel = mapTexelToLinear(rockTexel);
-
-    float elevation = vWorldPos.y;
-    float slope = clamp((1.0 - vWorldNormalCustom.y) * 4.0, 0.0, 1.0);
-    float shoreMask = 1.0 - smoothstep(0.16, 0.92, elevation);
-    float cliffMask = max(smoothstep(0.16, 0.55, slope), smoothstep(1.4, 2.5, elevation) * 0.55);
-    float pathMask = smoothstep(0.68, 0.86, fbm21(worldUv * 0.060 + vec2(20.0, 11.0)));
-    float meadowTint = smoothstep(0.30, 0.78, fbm21(worldUv * 0.028 - vec2(5.0, 12.0)));
-
-    vec4 terrainTexel = grassTexel;
-    terrainTexel = mix(terrainTexel, dirtTexel, clamp(shoreMask * 0.72 + pathMask * 0.10, 0.0, 0.82));
-    terrainTexel.rgb *= mix(vec3(0.94, 0.99, 0.93), vec3(1.06, 1.03, 0.96), meadowTint * 0.30 + macroNoise * 0.12);
-    terrainTexel = mix(terrainTexel, rockTexel, clamp(cliffMask * (0.62 + detailNoise * 0.18), 0.0, 0.88));
-    terrainTexel.rgb = clamp((terrainTexel.rgb - 0.5) * 1.28 + 0.5, 0.0, 1.0);
-    diffuseColor = vec4(terrainTexel.rgb, diffuseColor.a);
-    float cloudMask = smoothstep(0.56, 0.82, cloudLayer(vWorldPos.xz + vec2(0.0, 20.0)));
-    diffuseColor.rgb *= mix(vec3(1.0), vec3(0.84, 0.87, 0.90), cloudMask * 0.22 * (1.0 - shoreMask * 0.35));
-#endif`
-                );
-        };
 
         this.ground = new THREE.Mesh(groundGeo, groundMat);
         this.ground.receiveShadow = true;

@@ -4602,6 +4602,10 @@ export class Building extends GameEntity {
         if (type === 'towncenter') this.radius = 2.0;
         else if (type === 'house' || type === 'farm') this.radius = 1.0;
         else if (type === 'tower') this.radius = 0.8;
+        
+        if (window.game && window.game.world && window.game.world.flattenArea) {
+            window.game.world.flattenArea(this.position.x, this.position.z, this.radius * 1.5, this.position.y);
+        }
     }
 
     completeConstruction() {
