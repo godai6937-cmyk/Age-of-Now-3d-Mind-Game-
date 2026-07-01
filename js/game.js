@@ -1290,7 +1290,12 @@ class GameController {
                         ent.position.x += (ent.networkTargetPos.x - ent.position.x) * dt * 15;
                         ent.position.z += (ent.networkTargetPos.z - ent.position.z) * dt * 15;
                         if (ent.mesh) {
-                            ent.mesh.position.set(ent.position.x, this.world.getElevationAtCoords(ent.position.x, ent.position.z), ent.position.z);
+                            // Smoothly interpolate Y toward ground elevation instead of snapping
+                            const targetY = this.world.getElevationAtCoords(ent.position.x, ent.position.z);
+                            const currentY = ent.mesh.position.y;
+                            const smoothY = currentY + (targetY - currentY) * Math.min(1, dt * 8);
+                            ent.position.y = smoothY;
+                            ent.mesh.position.set(ent.position.x, smoothY, ent.position.z);
                             
                             if (ent.networkTargetRot !== undefined) {
                                 let diff = ent.networkTargetRot - ent.mesh.rotation.y;
