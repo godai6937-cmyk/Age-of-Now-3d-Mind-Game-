@@ -1119,9 +1119,7 @@ h1, h2, h3, h4, .game-title {
         padding: 2px 6px;
         font-size: 0.9rem;
     }
-    #btn-restart {
-        display: none !important;
-    }
+    /* Restart button is now visible */
     #bottom-bar {
         grid-template-columns: 140px 1fr 140px;
         height: 90px;
