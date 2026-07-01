@@ -1444,7 +1444,10 @@ class GameController {
                         if (cmd.rotation !== undefined && b.mesh) b.mesh.rotation.y = cmd.rotation;
                         cmd.unitIds.forEach(id => {
                             const unit = this.entities.find(e => e.id === id && e.faction === cmd.faction);
-                            if (unit) unit.setOrder('BUILD', b);
+                            if (unit) {
+                                unit.autoMode = false;
+                                unit.setOrder('BUILD', b);
+                            }
                         });
                     }
                 }
