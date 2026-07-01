@@ -36,12 +36,8 @@ export class NetworkController {
                 ]
             }
         };
-        let savedPeerId = sessionStorage.getItem('ageOfNow_peerId');
-        if (!savedPeerId) {
-            savedPeerId = 'peer_' + Math.random().toString(36).substr(2, 9);
-            sessionStorage.setItem('ageOfNow_peerId', savedPeerId);
-        }
-        this.peer = new Peer(savedPeerId, peerConfig);
+        const newPeerId = 'peer_' + Math.random().toString(36).substr(2, 9);
+        this.peer = new Peer(newPeerId, peerConfig);
         this.peer.on('disconnected', () => {
             console.log('Host disconnected from PeerServer. Reconnecting...');
             this.peer.reconnect();
@@ -214,12 +210,8 @@ export class NetworkController {
                 ]
             }
         };
-        let savedPeerId = sessionStorage.getItem('ageOfNow_peerId');
-        if (!savedPeerId) {
-            savedPeerId = 'peer_' + Math.random().toString(36).substr(2, 9);
-            sessionStorage.setItem('ageOfNow_peerId', savedPeerId);
-        }
-        this.peer = new Peer(savedPeerId, peerConfig);
+        const newPeerId = 'peer_' + Math.random().toString(36).substr(2, 9);
+        this.peer = new Peer(newPeerId, peerConfig);
         
         this.peer.on('disconnected', () => {
             console.log('Client disconnected from PeerServer. Reconnecting...');
