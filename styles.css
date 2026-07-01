@@ -478,10 +478,8 @@ h1, h2, h3, h4, .game-title {
     border: 1px solid rgba(255, 255, 255, 0.15);
     background: #060913;
     border-radius: 6px;
-    flex: 1;
-    width: auto;
-    max-height: 100%;
-    aspect-ratio: 1 / 1;
+    width: 150px;
+    height: 150px;
 }
 
 .minimap-label {
