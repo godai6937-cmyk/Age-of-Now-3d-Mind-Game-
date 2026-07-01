@@ -427,14 +427,14 @@ export class WorldMap {
                 Math.abs(this.getRawElevation(x + 0.75, z) - this.getRawElevation(x - 0.75, z)) +
                 Math.abs(this.getRawElevation(x, z + 0.75) - this.getRawElevation(x, z - 0.75));
 
-            const grassA = new THREE.Color(0.38, 0.80, 0.30);
-            const grassB = new THREE.Color(0.48, 0.86, 0.36);
-            const meadow = new THREE.Color(0.60, 0.90, 0.42);
-            const dirt = new THREE.Color(0.70, 0.58, 0.38);
-            const wetSand = new THREE.Color(0.78, 0.72, 0.55);
-            const drySand = new THREE.Color(0.92, 0.85, 0.65);
-            const rock = new THREE.Color(0.55, 0.58, 0.62);
-            const snow = new THREE.Color(0.94, 0.95, 0.97);
+            const grassA = new THREE.Color(0.12, 0.28, 0.10);
+            const grassB = new THREE.Color(0.18, 0.35, 0.14);
+            const meadow = new THREE.Color(0.25, 0.45, 0.18);
+            const dirt = new THREE.Color(0.18, 0.14, 0.08);
+            const wetSand = new THREE.Color(0.20, 0.18, 0.12);
+            const drySand = new THREE.Color(0.28, 0.24, 0.16);
+            const rock = new THREE.Color(0.15, 0.32, 0.12); // Normal grass field color
+            const snow = new THREE.Color(0.18, 0.35, 0.14); // Normal grass field color
 
             let col = grassA.clone().lerp(grassB, grassVar);
             const meadowW = smooth(0.25, 0.78, nSmall) * smooth(0.18, 1.35, elevation) * (1 - smooth(1.7, 3.0, elevation));
@@ -468,6 +468,7 @@ export class WorldMap {
             const pathNoise = smooth(0.55, 0.85, fbmNoise(nx * 0.9 + 200, nz * 0.9 - 80, 3));
             col.lerp(dirt, THREE.MathUtils.clamp(wornGround * 0.85 + pathNoise * 0.10, 0, 0.9));
 
+            col.convertSRGBToLinear();
             colors.push(col.r, col.g, col.b);
         }
 
@@ -475,10 +476,9 @@ export class WorldMap {
         groundGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
         groundGeo.computeVertexNormals();
 
-        const groundMat = new THREE.MeshStandardMaterial({
+        const groundMat = new THREE.MeshLambertMaterial({
             vertexColors: true,
-            roughness: 0.95,
-            metalness: 0.0,
+            roughness: 0.8,
             flatShading: false
         });
 
@@ -490,7 +490,7 @@ export class WorldMap {
     createFlowerPatchMesh() {
         const group = new THREE.Group();
         const bloomPalette = [0xfff1a8, 0xffffff, 0xd8d4ff, 0xffb7d5, 0x8cc8ff];
-        const stemMat = new THREE.MeshStandardMaterial({ color: 0x4f8f38, roughness: 0.9, flatShading: true });
+        const stemMat = new THREE.MeshLambertMaterial({ color: 0x4f8f38, roughness: 0.9, flatShading: true });
         const stemGeo = new THREE.CylinderGeometry(0.009, 0.012, 0.16, 4);
         const bloomGeo = new THREE.SphereGeometry(0.028, 5, 4);
 
@@ -499,7 +499,7 @@ export class WorldMap {
             const stem = new THREE.Mesh(stemGeo, stemMat);
             const bloom = new THREE.Mesh(
                 bloomGeo,
-                new THREE.MeshStandardMaterial({
+                new THREE.MeshLambertMaterial({
                     color: bloomPalette[Math.floor(this.prng.next() * bloomPalette.length)],
                     roughness: 0.82,
                     flatShading: true
@@ -523,9 +523,9 @@ export class WorldMap {
     createCliffFormationMesh() {
         const group = new THREE.Group();
         const rockMats = [
-            new THREE.MeshStandardMaterial({ color: 0x7b828a, roughness: 0.95, flatShading: true }),
-            new THREE.MeshStandardMaterial({ color: 0x939aa2, roughness: 0.92, flatShading: true }),
-            new THREE.MeshStandardMaterial({ color: 0x686f77, roughness: 0.96, flatShading: true })
+            new THREE.MeshLambertMaterial({ color: 0x7b828a, roughness: 0.95, flatShading: true }),
+            new THREE.MeshLambertMaterial({ color: 0x939aa2, roughness: 0.92, flatShading: true }),
+            new THREE.MeshLambertMaterial({ color: 0x686f77, roughness: 0.96, flatShading: true })
         ];
 
         const slabCount = 4 + Math.floor(this.prng.next() * 4);
@@ -557,7 +557,7 @@ export class WorldMap {
         const waterGeo = new THREE.PlaneGeometry(size, size, waterSegs, waterSegs);
         waterGeo.rotateX(-Math.PI / 2);
 
-        const waterMat = new THREE.MeshStandardMaterial({
+        const waterMat = new THREE.MeshLambertMaterial({
             color: 0x0077be,
             opacity: 0.85,
             transparent: true,
@@ -606,54 +606,10 @@ export class WorldMap {
                 if (cloud.position.z < -145) cloud.position.z = 145;
             });
         }
-
-        if (this.grassBlades) {
-            this.grassBlades.forEach(blade => {
-                const wind = Math.sin(this.waterTime * 2.5 + blade.position.x * 0.5 + blade.position.z * 0.5) * 0.18;
-                blade.rotation.z = wind;
-                blade.rotation.x = Math.abs(wind) * 0.35;
-            });
-        }
     }
 
     createGrassAndDecor() {
-        // Use 3D cone geometry for grass — no textures, no transparency issues
-        const bladeGeo = new THREE.ConeGeometry(0.03, 0.25, 4);
-        bladeGeo.translate(0, 0.125, 0); // Pivot at bottom
-        
-        // Several shades of green for variety
-        const grassColors = [0x2d5a27, 0x418239, 0x3a7a32, 0x4d8c3f, 0x2a6e22, 0x356b2c];
-        const grassMats = grassColors.map(c => new THREE.MeshStandardMaterial({
-            color: c, roughness: 0.9, flatShading: true
-        }));
-        
         const halfSize = this.planeSize / 2;
-        this.grassBlades = [];
-
-        // Generate grass clumps — each clump has 3-5 blades for a natural tuft look
-        for (let i = 0; i < 400; i++) {
-            const cx = this.prng.next() * this.planeSize - halfSize;
-            const cz = this.prng.next() * this.planeSize - halfSize;
-            const elevation = this.getElevationAtCoords(cx, cz);
-            if (elevation < 0.3) continue; // skip underwater
-
-            const clumpSize = 3 + Math.floor(this.prng.next() * 3);
-            for (let j = 0; j < clumpSize; j++) {
-                const ox = (this.prng.next() - 0.5) * 0.3;
-                const oz = (this.prng.next() - 0.5) * 0.3;
-                const mat = grassMats[Math.floor(this.prng.next() * grassMats.length)];
-                const blade = new THREE.Mesh(bladeGeo, mat);
-                blade.position.set(cx + ox, elevation, cz + oz);
-                blade.rotation.y = this.prng.next() * Math.PI * 2;
-                blade.rotation.z = (this.prng.next() - 0.5) * 0.3; // slight lean
-                const scale = 0.7 + this.prng.next() * 0.6;
-                blade.scale.set(scale, scale, scale);
-                blade.userData.initialRotY = blade.rotation.y;
-                this.scene.add(blade);
-                this.grassBlades.push(blade);
-            }
-        }
-
         // Wildflower meadows for a richer, less empty ground plane
         for (let i = 0; i < 90; i++) {
             const x = this.prng.next() * this.planeSize - halfSize;
@@ -681,7 +637,7 @@ export class WorldMap {
         
         // Decorative small rocks
         const rockGeo = new THREE.DodecahedronGeometry(0.15);
-        const rockMat = new THREE.MeshStandardMaterial({ color: 0x7A7A7A, roughness: 0.95, flatShading: true });
+        const rockMat = new THREE.MeshLambertMaterial({ color: 0x7A7A7A, roughness: 0.95, flatShading: true });
         for (let i = 0; i < 80; i++) {
             const x = this.prng.next() * this.planeSize - halfSize;
             const z = this.prng.next() * this.planeSize - halfSize;
@@ -694,7 +650,6 @@ export class WorldMap {
             rock.castShadow = true;
             this.scene.add(rock);
         }
-
 
     }
 
@@ -741,17 +696,26 @@ export class WorldMap {
         };
 
         // Procedural Deep Forest Trees
-        for (let i = 0; i < 1500; i++) {
+        for (let i = 0; i < 4500; i++) {
             const x = this.prng.next() * this.planeSize - halfSize;
             const z = this.prng.next() * this.planeSize - halfSize;
             
             // Avoid immediate base areas
-            if (isNearAnyBase(x, z, 12)) continue;
+            if (isNearAnyBase(x, z, 15)) continue;
             
             const elevation = this.getElevationAtCoords(x, z);
 
-            if (elevation > 0.3 && elevation < 1.2) {
-                spawnResource('tree', x, z, 100);
+            if (elevation > 0.3 && elevation < 1.4) {
+                // Use noise to create dense forest patches and open clearings
+                const forestNoise = fbmNoise(x * 1.5 + 100, z * 1.5 - 50, 2);
+                
+                if (forestNoise > 0.55) {
+                    spawnResource('tree', x, z, 100); // Dense forest patch
+                } else if (forestNoise > 0.35 && this.prng.next() > 0.4) {
+                    spawnResource('tree', x, z, 100); // Forest edge
+                } else if (this.prng.next() > 0.94) {
+                    spawnResource('tree', x, z, 100); // Sparse lone trees
+                }
             }
         }
 
