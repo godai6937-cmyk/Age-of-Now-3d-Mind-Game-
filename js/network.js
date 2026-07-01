@@ -59,9 +59,11 @@ export class NetworkController {
 
         this.peer.on('connection', (conn) => {
             let slot = null;
+            let slotId = null;
             // Check if this peerId already has a reserved slot (Reconnection)
             for (let key in this.lobbyState) {
                 if (this.lobbyState[key].peerId === conn.peer) {
+                    slotId = key;
                     slot = this.lobbyState[key];
                     break;
                 }
@@ -74,10 +76,11 @@ export class NetworkController {
                     return;
                 }
                 const slotData = this.availableSlots.shift();
-                slot = this.lobbyState[slotData.id];
+                slotId = slotData.id;
+                slot = this.lobbyState[slotId];
             }
 
-            this.clientFactions.set(conn.peer, { id: slot.id, faction: slot.faction });
+            this.clientFactions.set(conn.peer, { id: slotId, faction: slot.faction });
             this.clientConnections.push(conn);
             
             slot.type = 'player';

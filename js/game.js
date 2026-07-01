@@ -257,8 +257,11 @@ class GameController {
                 document.getElementById('connection-status').classList.add('hidden');
                 
                 // Show Client UI
-                document.getElementById('lobby-invite-link').value = window.location.href;
-                document.getElementById('btn-lobby-start').style.display = 'none';
+                const inviteLinkEl = document.getElementById('lobby-invite-link');
+                if (inviteLinkEl) inviteLinkEl.value = window.location.href;
+                
+                const btnStart = document.getElementById('btn-lobby-start');
+                if (btnStart) btnStart.style.display = 'none';
                 
                 const waitMsg = document.getElementById('lobby-waiting-msg');
                 waitMsg.textContent = "Connecting to host...";
