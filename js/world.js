@@ -222,11 +222,15 @@ export class WorldMap {
         const h01 = this._elevationGrid[row1][col0];
         const h11 = this._elevationGrid[row1][col1];
         
-        // Bilinear interpolation
-        const h0 = h00 * (1 - tx) + h10 * tx;
-        const h1 = h01 * (1 - tx) + h11 * tx;
-        
-        return h0 * (1 - tz) + h1 * tz;
+        // Barycentric interpolation matching Three.js PlaneGeometry triangles
+        // The quad is split by the diagonal from (0,1) to (1,0) (i.e. tx + tz = 1)
+        if (tx + tz <= 1) {
+            // Upper-left triangle (tx + tz <= 1): (0,0), (1,0), (0,1) -> h00, h10, h01
+            return h00 + tx * (h10 - h00) + tz * (h01 - h00);
+        } else {
+            // Lower-right triangle (tx + tz > 1): (1,1), (0,1), (1,0) -> h11, h01, h10
+            return h11 + (1 - tx) * (h01 - h11) + (1 - tz) * (h10 - h11);
+        }
     }
 
     generate() {
@@ -524,7 +528,7 @@ export class WorldMap {
     terrainTexel.rgb *= mix(vec3(0.94, 0.99, 0.93), vec3(1.06, 1.03, 0.96), meadowTint * 0.30 + macroNoise * 0.12);
     terrainTexel = mix(terrainTexel, rockTexel, clamp(cliffMask * (0.62 + detailNoise * 0.18), 0.0, 0.88));
     terrainTexel.rgb = clamp((terrainTexel.rgb - 0.5) * 1.28 + 0.5, 0.0, 1.0);
-    diffuseColor *= terrainTexel;
+    diffuseColor = vec4(terrainTexel.rgb, diffuseColor.a);
     float cloudMask = smoothstep(0.56, 0.82, cloudLayer(vWorldPos.xz + vec2(0.0, 20.0)));
     diffuseColor.rgb *= mix(vec3(1.0), vec3(0.84, 0.87, 0.90), cloudMask * 0.22 * (1.0 - shoreMask * 0.35));
 #endif`
