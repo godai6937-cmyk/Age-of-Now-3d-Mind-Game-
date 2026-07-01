@@ -295,7 +295,7 @@ class GameController {
             
             const onHostConnected = () => {
                 const waitMsg = document.getElementById('lobby-waiting-msg');
-                waitMsg.textContent = "You joined succesfully game let host starts the game ok";
+                waitMsg.textContent = "Successfully joined the lobby. Waiting for the host to start the game...";
             };
 
             this.network.initClient(joinId, onInit, onError, onHostConnected);
