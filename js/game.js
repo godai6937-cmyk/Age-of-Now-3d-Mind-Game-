@@ -1456,7 +1456,12 @@ class GameController {
                 if (cmd.unitIds) {
                     cmd.unitIds.forEach(id => {
                         const unit = this.entities.find(e => e.id === id && e.faction === cmd.faction);
-                        if (unit) unit.autoMode = cmd.enable;
+                        if (unit) {
+                            unit.autoMode = cmd.enable;
+                            if (!cmd.enable) {
+                                unit.setOrder('IDLE');
+                            }
+                        }
                     });
                 }
                 break;
