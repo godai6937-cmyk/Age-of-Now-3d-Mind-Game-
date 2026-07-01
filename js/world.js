@@ -450,6 +450,7 @@ export class WorldMap {
             tex.magFilter = THREE.LinearFilter;
             tex.minFilter = THREE.LinearMipmapLinearFilter;
             tex.anisotropy = 16;
+            tex.encoding = THREE.sRGBEncoding;
         });
         grassTex.repeat.set(12, 12);
         dirtTex.repeat.set(18, 18);

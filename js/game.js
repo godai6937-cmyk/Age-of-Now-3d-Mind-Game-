@@ -154,21 +154,25 @@ class GameController {
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 800;
 
             // Renderer
-            this.renderer = new THREE.WebGLRenderer({ antialias: !isMobile });
+            this.renderer = new THREE.WebGLRenderer({ antialias: !isMobile, precision: 'highp' });
             this.renderer.setPixelRatio(isMobile ? Math.min(window.devicePixelRatio, 1.35) : Math.min(window.devicePixelRatio, 2));
             this.renderer.setSize(window.innerWidth, window.innerHeight);
             this.renderer.shadowMap.enabled = !isMobile;
             this.renderer.shadowMap.type = isMobile ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
             this.renderer.outputEncoding = THREE.sRGBEncoding;
-            this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            this.renderer.toneMapping = isMobile ? THREE.NoToneMapping : THREE.ACESFilmicToneMapping;
             this.renderer.toneMappingExposure = 1.05;
             document.getElementById('game-container').appendChild(this.renderer.domElement);
 
             // Lighting
-            const ambientLight = new THREE.AmbientLight(0xf4f8ff, 0.48);
+            const ambientLight = new THREE.AmbientLight(0xf4f8ff, 0.35);
             this.scene.add(ambientLight);
 
-            const sunLight = new THREE.DirectionalLight(0xfff5de, 1.26);
+            const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.4);
+            hemiLight.position.set(0, 200, 0);
+            this.scene.add(hemiLight);
+
+            const sunLight = new THREE.DirectionalLight(0xfff5de, 1.1);
             sunLight.position.set(-34, 52, -18);
             sunLight.castShadow = !isMobile;
             
@@ -1803,8 +1807,10 @@ class GameController {
             
             if (isMobileUI) {
                 if (bottomBar) bottomBar.style.display = 'grid';
-                document.getElementById('info-panel').style.display = 'none';
-                document.getElementById('command-panel').style.display = 'none';
+                document.getElementById('info-panel').style.visibility = 'hidden';
+                document.getElementById('command-panel').style.visibility = 'hidden';
+                document.getElementById('info-panel').style.pointerEvents = 'none';
+                document.getElementById('command-panel').style.pointerEvents = 'none';
             } else {
                 if (bottomBar) bottomBar.style.display = 'grid';
                 if (this.mobileHUDTimer <= 0) {

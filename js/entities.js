@@ -26,6 +26,7 @@ const loadRepeatedTexture = (path, repeatX = 2, repeatY = 2) => {
     const texture = texLoader.load(path);
     texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
     texture.repeat.set(repeatX, repeatY);
+    texture.encoding = THREE.sRGBEncoding;
     return texture;
 };
 
