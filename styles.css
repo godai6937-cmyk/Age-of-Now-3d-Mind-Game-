@@ -218,9 +218,18 @@ h1, h2, h3, h4, .game-title {
 
 /* Left Panel - Selection Info */
 #info-panel {
+    grid-column: 1;
     display: flex;
     flex-direction: column;
     justify-content: center;
+}
+
+#command-panel {
+    grid-column: 2;
+}
+
+#minimap-panel {
+    grid-column: 3;
 }
 
 .info-content {
@@ -700,18 +709,13 @@ h1, h2, h3, h4, .game-title {
 
 /* Animations and tweaks */
 @media(max-width: 950px) {
-    #minimap-panel {
-        position: fixed !important;
-        bottom: max(15px, env(safe-area-inset-bottom, 15px)) !important;
-        right: max(10px, env(safe-area-inset-right, 10px)) !important;
-        grid-column: unset !important;
-        grid-row: unset !important;
-        z-index: 100 !important;
-        margin: 0 !important;
-    }
     #hud {
         padding: 4px;
         padding-bottom: max(15px, env(safe-area-inset-bottom, 15px));
+    }
+    #minimap-canvas {
+        width: 70px;
+        height: 70px;
     }
     .hud-panel {
         padding: 4px 6px;
@@ -839,6 +843,8 @@ h1, h2, h3, h4, .game-title {
         display: flex;
         padding: 4px;
         justify-content: flex-end;
+        grid-column: 2;
+        grid-row: 2;
     }
     .command-grid {
         grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
@@ -1119,6 +1125,10 @@ h1, h2, h3, h4, .game-title {
         grid-template-columns: 140px 1fr 140px;
         height: 90px;
         gap: 4px;
+    }
+    #minimap-canvas {
+        width: 70px;
+        height: 70px;
     }
     .info-portrait {
         width: 35px;
