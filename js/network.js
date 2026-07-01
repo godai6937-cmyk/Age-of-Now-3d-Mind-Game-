@@ -92,7 +92,12 @@ export class NetworkController {
                 const aiIndex = this.game.aiPlayers.findIndex(ai => ai.faction === slot.faction);
                 if (aiIndex !== -1) {
                     this.game.aiPlayers.splice(aiIndex, 1);
-                    console.log(`Player joined: removed AI for faction ${slot.faction}`);
+                    
+                    // Reset resources so the joining player gets a fair start and doesn't inherit AI debts/cheats
+                    if (!this.game.factionResources) this.game.factionResources = {};
+                    this.game.factionResources[slot.faction] = { food: 400, wood: 400, gold: 200, stone: 200 };
+                    
+                    console.log(`Player joined: removed AI for faction ${slot.faction} and reset resources`);
                 }
             }
 
