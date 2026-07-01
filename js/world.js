@@ -469,11 +469,15 @@ export class WorldMap {
             col.lerp(dirt, THREE.MathUtils.clamp(wornGround * 0.85 + pathNoise * 0.10, 0, 0.9));
 
             col.convertSRGBToLinear();
-            colors.push(col.r, col.g, col.b);
+            colors.push(
+                Math.min(255, Math.max(0, Math.floor(col.r * 255))), 
+                Math.min(255, Math.max(0, Math.floor(col.g * 255))), 
+                Math.min(255, Math.max(0, Math.floor(col.b * 255)))
+            );
         }
 
         posAttr.needsUpdate = true;
-        groundGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+        groundGeo.setAttribute('color', new THREE.Uint8BufferAttribute(colors, 3, true));
         groundGeo.computeVertexNormals();
 
         const groundMat = new THREE.MeshLambertMaterial({
