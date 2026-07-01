@@ -702,8 +702,8 @@ h1, h2, h3, h4, .game-title {
 @media(max-width: 950px) {
     #minimap-panel {
         position: fixed !important;
-        bottom: max(5px, env(safe-area-inset-bottom, 5px)) !important;
-        right: max(5px, env(safe-area-inset-right, 5px)) !important;
+        bottom: max(15px, env(safe-area-inset-bottom, 15px)) !important;
+        right: max(10px, env(safe-area-inset-right, 10px)) !important;
         grid-column: unset !important;
         grid-row: unset !important;
         z-index: 100 !important;
@@ -711,6 +711,7 @@ h1, h2, h3, h4, .game-title {
     }
     #hud {
         padding: 4px;
+        padding-bottom: max(15px, env(safe-area-inset-bottom, 15px));
     }
     .hud-panel {
         padding: 4px 6px;
@@ -1047,7 +1048,7 @@ h1, h2, h3, h4, .game-title {
     }
     #hud {
         padding: 5px;
-        padding-bottom: max(40px, env(safe-area-inset-bottom, 40px));
+        padding-bottom: max(85px, env(safe-area-inset-bottom, 85px));
     }
     .hud-panel {
         padding: 8px 10px;
