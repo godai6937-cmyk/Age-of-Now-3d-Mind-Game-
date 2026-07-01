@@ -255,6 +255,8 @@ class GameController {
             
             const onInit = () => {
                 document.getElementById('connection-status').classList.add('hidden');
+                document.getElementById('mode-selection').style.display = 'none';
+                document.getElementById('lobby-container').classList.remove('hidden');
                 
                 // Show Client UI
                 const inviteLinkEl = document.getElementById('lobby-invite-link');
@@ -337,6 +339,14 @@ class GameController {
             this.localFaction = data.yourFaction;
         }
         
+        if (data && data.lobbyState) {
+            for (let i = 1; i <= 4; i++) {
+                if (data.lobbyState[i].type === 'empty') {
+                    data.lobbyState[i].type = 'pc';
+                }
+            }
+        }
+        
         if (this.dom.startScreen) this.dom.startScreen.classList.add('hidden');
         this.dom.hud.classList.remove('hidden');
         
@@ -367,50 +377,13 @@ class GameController {
         }
         this.world.generate();
 
-        // Generate random town center locations
-        this.basePositions = {};
-        const factions = ['player', 'enemy', 'player3', 'player4'];
-        const minSpacing = 80; // Minimum distance between any two town centers
-        const mapLimit = (this.world.planeSize / 2) - 30; // Keep them away from map edges
-        
-        let attempts = 0;
-        let placed = 0;
-        
-        while (placed < 4 && attempts < 1000) {
-            attempts++;
-            // Generate random coordinate using world's PRNG for determinism
-            const x = (this.world.prng.next() * 2 - 1) * mapLimit;
-            const z = (this.world.prng.next() * 2 - 1) * mapLimit;
-            
-            // Must be on land
-            if (this.world.getElevationAtCoords(x, z) < 0.25) continue;
-            
-            // Check spacing with already placed factions
-            let tooClose = false;
-            for (let i = 0; i < placed; i++) {
-                const otherPos = this.basePositions[factions[i]];
-                const dist = Math.hypot(x - otherPos.x, z - otherPos.z);
-                if (dist < minSpacing) {
-                    tooClose = true;
-                    break;
-                }
-            }
-            
-            if (!tooClose) {
-                this.basePositions[factions[placed]] = { x: Math.floor(x), z: Math.floor(z) };
-                placed++;
-            }
-        }
-        
-        // Fallback if we couldn't place them due to water/spacing issues
-        if (placed < 4) {
-            this.basePositions = {
-                'player': { x: -40, z: 40 },
-                'enemy': { x: 40, z: -40 },
-                'player3': { x: -40, z: -40 },
-                'player4': { x: 40, z: 40 }
-            };
-        }
+        // Fixed town center locations to prevent Host/Client PRNG desync
+        this.basePositions = {
+            'player': { x: -40, z: 40 },
+            'enemy': { x: 40, z: -40 },
+            'player3': { x: -40, z: -40 },
+            'player4': { x: 40, z: 40 }
+        };
 
         // Host handles initial spawns locally in setupStartingBases
         // Clients just rely on network state updates, but we need to create the bases for all configured factions
