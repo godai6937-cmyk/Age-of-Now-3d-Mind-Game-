@@ -711,8 +711,9 @@ h1, h2, h3, h4, .game-title {
 @media(max-width: 950px) {
     #hud {
         padding: 4px;
-        padding-bottom: max(15px, env(safe-area-inset-bottom, 15px));
+        padding-bottom: max(45px, env(safe-area-inset-bottom, 45px));
     }
+    #credits-overlay { display: none !important; }
     #minimap-canvas {
         width: 70px;
         height: 70px;
