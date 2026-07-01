@@ -483,16 +483,7 @@ class GameController {
                 this.camera.position.set(eTC.position.x, 35, eTC.position.z + 40);
             }
 
-            const eBarr = new Building(this.getNewEntityId(), 'enemy', 'barracks', 400, et.x + 4, et.z - 4, {});
-            eBarr.mesh = this.builders.createBarracks('enemy');
-            eBarr.completeConstruction();
-            eBarr.alignMesh();
-            this.scene.add(eBarr.mesh);
-            this.entities.push(eBarr);
-
             eOffsets.forEach(([dx, dz]) => this.spawnUnit('enemy', 'villager', et.x + dx, et.z + dz));
-            this.spawnUnit('enemy', 'soldier', et.x + 5, et.z - 5);
-            this.spawnUnit('enemy', 'soldier', et.x - 5, et.z - 5);
         }
 
         // --- PLAYER 3 BASE ---
