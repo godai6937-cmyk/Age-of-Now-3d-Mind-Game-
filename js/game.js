@@ -5,7 +5,7 @@ import { InputController } from './input.js?v=66';
 import { EnemyAI } from './ai.js?v=15';
 import { audio } from './audio.js?v=33';
 import { VFXSystem } from './vfx.js?v=14';
-import { NetworkController } from './network.js?v=5';
+import { NetworkController } from './network.js?v=6';
 
 class GameController {
     constructor() {
@@ -1383,7 +1383,10 @@ class GameController {
                 if (cmd.unitIds) {
                     cmd.unitIds.forEach(id => {
                         const unit = this.entities.find(e => e.id === id && e.faction === cmd.faction);
-                        if (unit) unit.moveTo(cmd.x, cmd.z);
+                        if (unit) {
+                            unit.autoMode = false;
+                            unit.moveTo(cmd.x, cmd.z);
+                        }
                     });
                 }
                 break;
@@ -1397,7 +1400,10 @@ class GameController {
                     if (target) {
                         cmd.unitIds.forEach(id => {
                             const unit = this.entities.find(e => e.id === id && e.faction === cmd.faction);
-                            if (unit) unit.setOrder(cmd.type === 'ORDER_LOAD' ? 'LOAD' : cmd.type, target);
+                            if (unit) {
+                                unit.autoMode = false;
+                                unit.setOrder(cmd.type === 'ORDER_LOAD' ? 'LOAD' : cmd.type, target);
+                            }
                         });
                     }
                 }
@@ -1408,6 +1414,7 @@ class GameController {
                     if (t && t.type === 'transportboat' && t.loadedEntities) {
                         t.loadedEntities.forEach(u => {
                             u.isLoaded = false;
+                            u.autoMode = false;
                             if (u.mesh) u.mesh.visible = true;
                             u.position.copy(t.position);
                             u.position.x += (Math.random() * 4 - 2);

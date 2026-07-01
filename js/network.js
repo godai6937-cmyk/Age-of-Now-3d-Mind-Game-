@@ -97,7 +97,22 @@ export class NetworkController {
                     if (!this.game.factionResources) this.game.factionResources = {};
                     this.game.factionResources[slot.faction] = { food: 400, wood: 400, gold: 200, stone: 200 };
                     
-                    console.log(`Player joined: removed AI for faction ${slot.faction} and reset resources`);
+                    // Prevent wrong game advantage: destroy AI units/buildings except 1 TC and 3 Villagers
+                    let tcKept = false;
+                    let villagerCount = 0;
+                    this.game.entities.forEach(e => {
+                        if (e.faction === slot.faction && !e.dead) {
+                            if (e.type === 'towncenter' && !tcKept) {
+                                tcKept = true;
+                            } else if (e.type === 'villager' && villagerCount < 3) {
+                                villagerCount++;
+                            } else {
+                                e.die();
+                            }
+                        }
+                    });
+                    
+                    console.log(`Player joined: removed AI for faction ${slot.faction}, reset resources, and wiped advantage`);
                 }
             }
 
@@ -309,7 +324,8 @@ export class NetworkController {
                 c: e.isCompleted ? 1 : 0,
                 p: e.buildProgress ? Math.round(e.buildProgress) : 0,
                 r: e.mesh ? Math.round(e.mesh.rotation.y * 100) / 100 : 0,
-                gt: e.gatherTargetType || null
+                gt: e.gatherTargetType || null,
+                am: e.autoMode ? 1 : 0
             }));
 
         const payload = { type: 'STATE', state, resources: this.game.factionResources };
@@ -387,6 +403,7 @@ export class NetworkController {
                 entity.health = s.h;
                 entity.state = s.s;
                 entity.gatherTargetType = s.gt;
+                entity.autoMode = s.am === 1;
                 
                 if (s.c === 1 && entity.isBuilding && !entity.isCompleted) {
                     entity.completeConstruction();
