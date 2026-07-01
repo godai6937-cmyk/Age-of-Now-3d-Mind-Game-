@@ -266,7 +266,6 @@ class GameController {
                 if (btnStart) btnStart.style.display = 'none';
                 
                 const waitMsg = document.getElementById('lobby-waiting-msg');
-                waitMsg.textContent = "Connecting to host...";
                 waitMsg.classList.remove('hidden');
                 
                 Array.from(document.querySelectorAll('.host-only')).forEach(el => el.style.display = 'none');
